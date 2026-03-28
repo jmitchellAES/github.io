@@ -15,7 +15,6 @@
     --bg:#f4f6f8;
     --card:#ffffff;
     --border:#d9dee3;
-    --muted:#6b7280;
     --soft:#f8fafc;
   }
   body{
@@ -47,7 +46,7 @@
   h1{ margin:0; }
 
   label{ font-size:13px; font-weight:bold; }
-  input, select{
+  input{
     width:100%;
     padding: 10px;
     margin-top: 6px;
@@ -74,8 +73,6 @@
     padding: 14px;
     margin-bottom: 14px;
   }
-  .small{ font-size: 12px; color: #555; margin-top: 6px; }
-
   .toggleRow{
     display:flex;
     align-items:center;
@@ -87,6 +84,7 @@
     height:18px;
     margin:0;
   }
+  .small{ font-size: 12px; color: #555; margin-top: 6px; }
 
   .row{
     display:flex;
@@ -137,7 +135,6 @@
     line-height: 1.35;
   }
 
-  /* Print cleanly: hide buttons only */
   @media print{
     body{ background:#fff; padding: 0; }
     .container{ box-shadow:none; }
@@ -149,8 +146,9 @@
 <body>
 <div class="container">
 
+  <!-- Header: logo + title only -->
   <div class="header">
-    <img class="logo" src="aes-logo.png" alt="AES Logo">
+    <img class="logo" src="aes-logo.png" alt="AES logo">
     <div>
       <h1>Lighting ROI Calculator</h1>
     </div>
@@ -209,11 +207,11 @@
     </div>
   </div>
 
-  <!-- Controls: checkbox instead of dropdown -->
+  <!-- Controls checkbox -->
   <div class="panel">
     <div class="toggleRow">
       <input id="controlsEnabled" type="checkbox">
-      <label style="margin:0;">Add Controls </label>
+      <label style="margin:0;">Add Controls (2‑Level Dim → Off)</label>
     </div>
 
     <div id="controlsFields" style="display:none;">
@@ -243,7 +241,7 @@
 
   <div class="row no-print">
     <button class="primary" id="btnCalc" type="button">Calculate</button>
-    <button class="secondary" id="btnEmail" type="button">Email Customer</button>
+    <button class="secondary" id="btnEmail" type="button">Email Customer (Print → Email)</button>
     <button class="secondary" id="btnPrint" type="button">Print / Save as PDF</button>
   </div>
 
@@ -280,19 +278,17 @@
     </tr>
   </table>
 
-  <!-- Footer keeps your info + Build ID -->
   <div class="footer">
-    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales •
-    jmitchell@allelectricsales.com • 847 830 8447<br>
+    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447<br>
     Build ID: <b id="buildId"></b>
   </div>
 </div>
 
 <script>
 (function(){
-  document.getElementById("buildId").textContent = new Date().toISOString();
-
   const $ = (id)=>document.getElementById(id);
+
+  $("buildId").textContent = new Date().toISOString();
 
   function warn(msg){
     $("warn").style.display="block";
@@ -340,15 +336,12 @@
       return null;
     }
 
-    // Annual baseline energy
     const oldKwh = (qty * oldW * hrs * days) / 1000;
     const ledKwh = (qty * newW * hrs * days) / 1000;
 
-    // Fixtures-only annual savings and cost
     const annualFix = (oldKwh - ledKwh) * rate;
     const netFix = Math.max(0, fixtureCost - rebate);
 
-    // Controls scenario defaults to fixtures-only unless enabled
     let annualCtrl = annualFix;
     let netCtrl = netFix;
 
@@ -367,22 +360,18 @@
         return null;
       }
 
-      // Real dimming math: Level 1 is starting level, then Level 2, then OFF (within occupied hours).
+      // Real dimming math: Level 1 then Level 2 then OFF (within occupied hours)
       const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
       const controlledKwh = dailyControlledKwh * days;
 
       annualCtrl = (oldKwh - controlledKwh) * rate;
-
-      // Clamp if rounding produces tiny negative incremental
       if(annualCtrl < annualFix) annualCtrl = annualFix;
 
-      // Controls cost applies when controls enabled
       netCtrl = Math.max(0, fixtureCost + controlsCost - rebate);
     }
 
     const inc = annualCtrl - annualFix;
 
-    // Render
     $("outProject").textContent = project;
     $("sFix").textContent = money(annualFix) + " / year";
     $("sCtrl").textContent = money(annualCtrl) + " / year";
@@ -392,10 +381,12 @@
     $("pCtrl").textContent = payback(netCtrl, annualCtrl);
     $("incCtrl").textContent = money(inc) + " / year";
 
-    return { project, toEmail, annualFix, annualCtrl, netFix, netCtrl, inc };
+    return { project, toEmail };
   }
 
-  function emailCustomer(){
+  // Print first (Save as PDF), then open email draft.
+  // Note: browsers/mailto cannot attach files automatically. [1](https://stackoverflow.com/questions/5233556/using-mailto-to-send-email-with-an-attachment)
+  function emailCustomerPrintThenDraft(){
     const r = calc();
     if(!r) return;
 
@@ -405,53 +396,32 @@
       return;
     }
 
-    let body =
-      "Lighting ROI Estimate\n\n" +
-      "Project: " + r.project + "\n\n" +
-      "Fixtures Only:\n" +
-      "  Annual Savings: " + money(r.annualFix) + " / year\n" +
-      "  Net Project Cost: " + money(r.netFix) + "\n" +
-      "  Simple Payback: " + payback(r.netFix, r.annualFix) + "\n\n" +
-      "Fixtures + Controls:\n" +
-      "  Annual Savings: " + money(r.annualCtrl) + " / year\n" +
-      "  Net Project Cost: " + money(r.netCtrl) + "\n" +
-      "  Simple Payback: " + payback(r.netCtrl, r.annualCtrl) + "\n\n" +
-      "Incremental Controls Savings: " + money(r.inc) + " / year\n\n";
+    // After print dialog closes, open mail draft
+    window.onafterprint = function(){
+      const subject = encodeURIComponent("AES Lighting ROI Report");
+      const body = encodeURIComponent(
+        "Please see attached ROI report preformed by AES. Contact Jeff Mitchell with any questions."
+      );
+      const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
 
-    if($("controlsEnabled").checked){
-      body +=
-        "Controls Settings:\n" +
-        "  Level 1: " + $("lvl1Pct").value + "% for " + $("lvl1Min").value + " min\n" +
-        "  Level 2: " + $("lvl2Pct").value + "% for " + $("lvl2Min").value + " min\n" +
-        "  Then OFF\n\n";
-    } else {
-      body += "Controls: None\n\n";
-    }
+      window.location.href =
+        "mailto:" + encodeURIComponent(to) +
+        "?bcc=" + bcc +
+        "&subject=" + subject +
+        "&body=" + body;
 
-    body +=
-      "Prepared by:\n" +
-      "Jeffrey Mitchell\n" +
-      "All Electric Sales\n" +
-      "jmitchell@allelectricsales.com\n" +
-      "847 830 8447\n";
+      // cleanup
+      window.onafterprint = null;
+    };
 
-    const subject = encodeURIComponent("Lighting ROI Estimate - " + r.project);
-
-    // To customer, BCC you (customer will not see BCC in received email)
-    const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
-
-    window.location.href =
-      "mailto:" + encodeURIComponent(to) +
-      "?bcc=" + bcc +
-      "&subject=" + subject +
-      "&body=" + encodeURIComponent(body);
+    window.print();
   }
 
   document.addEventListener("DOMContentLoaded", function(){
     $("controlsEnabled").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);
-    $("btnEmail").addEventListener("click", emailCustomer);
     $("btnPrint").addEventListener("click", function(){ window.print(); });
+    $("btnEmail").addEventListener("click", emailCustomerPrintThenDraft);
 
     toggleControlsUI();
   });

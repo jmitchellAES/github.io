@@ -21,6 +21,11 @@ body {
   border-radius: 10px;
 }
 
+.logo {
+  max-height: 60px;
+  margin-bottom: 12px;
+}
+
 h1 {
   margin-top: 0;
 }
@@ -84,7 +89,19 @@ th {
 <body>
 
 <div class="container">
+
+  <!-- ✅ NEW: Logo at top of calculator (screen only) -->
+  <img src="aes-logo.png" alt="All Electric Sales Logo" class="logo">
+
   <h1>Lighting ROI Calculator</h1>
+
+  <!-- ✅ NEW: Project Name input -->
+  <div class="grid">
+    <div style="grid-column: span 3;">
+      <label>Project Name</label>
+      <input id="projectName" type="text" placeholder="e.g. ABC Warehouse Retrofit">
+    </div>
+  </div>
 
   <div class="grid">
     <div>
@@ -175,7 +192,7 @@ function calculate() {
   const newKwh = qty * newW * hrs * days / 1000;
 
   const fixtureSavings = (oldKwh - newKwh) * rate;
-  const controlsSavings = fixtureSavings * 0.20; // simple uplift
+  const controlsSavings = fixtureSavings * 0.20;
 
   const netFixtureCost = Math.max(0, fixtureCost - rebate);
   const netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
@@ -193,4 +210,3 @@ function calculate() {
 
 </body>
 </html>
-``

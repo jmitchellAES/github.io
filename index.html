@@ -1,11 +1,11 @@
-    <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AES ROI Calculator</title>
 
-  <!-- Preload logo so it’s ready when printing -->
+  <!-- Optional: helps the logo load faster for printing -->
   <link rel="preload" as="image" href="aes-logo.png">
 
   <style>
@@ -26,13 +26,15 @@
     .full{grid-column:span 12}
     @media (max-width:820px){.field,.third{grid-column:span 12}}
     label{font-size:13px;color:#374151}
-    input,select{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:15px;background:#fff}
+    input{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:15px;background:#fff}
     .hint{font-size:12px;color:var(--muted);margin-top:-2px}
     .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
     button{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
     .primary{background:var(--btn);color:var(--btnText)}
     .ghost{background:var(--btn2);color:var(--btn2Text)}
     .divider{margin-top:16px;border-top:1px solid var(--border);padding-top:16px}
+    .toggleRow{display:flex;gap:10px;align-items:center}
+    .toggleRow input{width:18px;height:18px}
     .controls{display:none;margin-top:12px;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#fafafa}
     .results{margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
     .metric{grid-column:span 4;border:1px solid var(--border);border-radius:14px;padding:12px;background:#fafafa}
@@ -40,11 +42,11 @@
     .k{font-size:12px;color:var(--muted)}
     .v{font-size:20px;font-weight:900;margin-top:6px}
     .warn{display:none;margin-top:12px;padding:10px;border-radius:12px;background:var(--warnBg);border:1px solid var(--warnBorder);color:var(--warnText);font-size:12px}
-    .toggleRow{display:flex;gap:10px;align-items:center}
-    .toggleRow input{width:18px;height:18px}
     .small{font-size:12px;color:var(--muted)}
 
-    /* ===== Print: show only #printArea (visibility approach is reliable) ===== */
+    /* ===== PRINT: show ONLY #printArea =====
+       Uses visibility approach (reliable for printing a specific section). [5](https://www.taxformfinder.org/index.php/federal/form-2553)[6](https://stackoverflow.com/questions/468881/print-div-id-printarea-div-only)
+    */
     #printArea{display:none;}
     @media print{
       body *{visibility:hidden;}
@@ -59,10 +61,7 @@
         font-size:12pt;
         line-height:1.35;
       }
-    }
 
-    /* Print layout styling */
-    @media print{
       .print-header{
         display:flex; align-items:center; justify-content:space-between;
         gap:18px; border-bottom:2px solid var(--brand);
@@ -88,6 +87,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="card">
@@ -205,14 +205,10 @@
     function money(n){ return "$" + (Math.round(n)).toLocaleString(); }
 
     function showWarn(msg){
-      var w = $("warn");
-      w.style.display = "block";
-      w.textContent = msg;
+      var w = $("warn"); w.style.display = "block"; w.textContent = msg;
     }
     function clearWarn(){
-      var w = $("warn");
-      w.style.display = "none";
-      w.textContent = "";
+      var w = $("warn"); w.style.display = "none"; w.textContent = "";
     }
 
     function toggleControls(){
@@ -249,14 +245,11 @@
         return null;
       }
 
-      // Baseline energies
       var oldKwh = (qty * oldW * hrs * days) / 1000;
       var ledKwh = (qty * newW * hrs * days) / 1000;
 
-      // Fixture-only savings
       var fixtureSavings = (oldKwh - ledKwh) * rate;
 
-      // Controls savings
       var controlledKwh = ledKwh;
       var controlSavings = 0;
 
@@ -266,17 +259,12 @@
         var l1Hrs = Number($("lvl1Min").value) / 60;
         var l2Hrs = Number($("lvl2Min").value) / 60;
 
-        if(isNaN(l1Pct) || isNaN(l2Pct) || isNaN(l1Hrs) || isNaN(l2Hrs)){
-          showWarn("Please enter valid controls values.");
-          return null;
-        }
         if((l1Hrs + l2Hrs) > hrs){
           showWarn("Controls timing exceeds occupied hours.");
           return null;
         }
 
-        // Starting level is Level 1 (not 100%).
-        // Occupied time is: Level 1 for l1Hrs, Level 2 for l2Hrs, OFF for remainder.
+        // Level 1 is the starting level (not 100%).
         var dailyControlledKwh = (qty * newW * ((l1Hrs * l1Pct) + (l2Hrs * l2Pct))) / 1000;
         controlledKwh = dailyControlledKwh * days;
 
@@ -298,7 +286,7 @@
       return true;
     }
 
-    function summaryLines(){
+    function summaryRows(){
       return [
         ["Annual Fixture Savings", $("fixtureSavings").textContent],
         ["Annual Controls Savings", $("controlSavings").textContent],
@@ -315,11 +303,11 @@
 
       var subject = encodeURIComponent("Lighting ROI Estimate");
       var body = "Lighting ROI Estimate\n\n";
-      var rows = summaryLines();
+      var rows = summaryRows();
       for(var i=0;i<rows.length;i++){
         body += rows[i][0] + ": " + rows[i][1] + "\n";
       }
-      body += "\nJeffrey Mitchell\nAll Electric Sales\njmitchell@allelectricsales.com\n847-830-8447\n";
+      body += "\nFor pricing, quotes, or additional questions:\nJeffrey Mitchell\njmitchell@allelectricsales.com\n847-830-8447\n";
 
       var bcc = encodeURIComponent("jmitchell@allelectricsales.com");
       window.location.href = "mailto:" + encodeURIComponent(email) + "?bcc=" + bcc + "&subject=" + subject + "&body=" + encodeURIComponent(body);
@@ -329,9 +317,8 @@
       if(calculate() === null) return;
 
       var today = new Date().toLocaleDateString();
-      var rows = summaryLines();
+      var rows = summaryRows();
 
-      // Build print HTML with a real <img> (not a CSS background) so it prints reliably. [1](https://stackoverflow.com/questions/17942969/css-media-print-not-working-at-all)[2](https://www.codestudy.net/blog/how-can-i-force-browsers-to-print-background-images-in-css/)
       var tableRows = "";
       for(var i=0;i<rows.length;i++){
         tableRows += "<tr><th>" + rows[i][0] + "</th><td>" + rows[i][1] + "</td></tr>";
@@ -347,16 +334,16 @@
         "</div>" +
         "<table class='print-table'>" + tableRows + "</table>" +
         "<div class='print-contact'>" +
-          "<div><b>For Quotes Or Questions:</b></div>" +
+          "<div><b>For pricing, quotes, or additional questions:</b></div>" +
           "<div>Jeffrey Mitchell</div>" +
           "<div>jmitchell@allelectricsales.com</div>" +
           "<div>847-830-8447</div>" +
         "</div>" +
         "<div class='print-footer'>" +
-          "This estimate is based on provided inputs and assumed operating conditions. Actual savings may vary based on usage, utility rates, and site conditions." +
+          "This estimate is based on provided inputs and assumed operating conditions. Actual savings may vary based on usage patterns, utility rates, and site conditions." +
         "</div>";
 
-      // Wait for logo to load before printing (prevents blank logo in PDF). [3](https://stackoverflow.com/questions/59313139/image-not-printing-on-window-print)[4](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Printing)
+      // Wait for the logo to load before printing (prevents missing logo). [3](https://stackoverflow.com/questions/59313139/image-not-printing-on-window-print)[4](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Printing)
       var img = $("printLogo");
       if(img && !img.complete){
         img.onload = function(){ window.print(); };
@@ -366,13 +353,11 @@
       }
     }
 
-    // Wire events
     $("controlsToggle").addEventListener("change", toggleControls);
     $("btnCalc").addEventListener("click", calculate);
     $("btnEmail").addEventListener("click", emailResults);
     $("btnPrint").addEventListener("click", printResults);
 
-    // Init
     toggleControls();
   </script>
 </body>

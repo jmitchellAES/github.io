@@ -137,6 +137,68 @@
               </div>
             </div>
           </div>
+          /* ===== Branded Print Styling ===== */
+@media print {
+  .print-wrap {
+    font-family: Arial, sans-serif;
+    color: #111;
+  }
+
+  .print-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    border-bottom: 2px solid #0a5c7d;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+
+  .print-logo {
+    max-height: 70px;
+  }
+
+  .header-text h1 {
+    margin: 0;
+    font-size: 22pt;
+  }
+
+  .date {
+    font-size: 10pt;
+    color: #555;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #ccc;
+    padding: 10px 12px;
+    font-size: 11pt;
+    text-align: left;
+  }
+
+  .print-table th {
+    background: #f3f4f6;
+    width: 60%;
+  }
+
+  .print-contact {
+    margin-top: 26px;
+    font-size: 11pt;
+  }
+
+  .print-footer {
+    margin-top: 24px;
+    font-size: 9.5pt;
+    color: #555;
+    border-top: 1px solid #ccc;
+    padding-top: 12px;
+  }
+}
         </div>
 
         <div class="field full">

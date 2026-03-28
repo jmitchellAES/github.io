@@ -1,14 +1,19 @@
-<!doctype html>
+    <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AES ROI Calculator</title>
+
+  <!-- Preload logo so it’s ready when printing -->
+  <link rel="preload" as="image" href="aes-logo.png">
+
   <style>
     :root{
       --border:#e5e7eb; --text:#111827; --muted:#6b7280; --bg:#ffffff;
       --btn:#111827; --btnText:#fff; --btn2:#eef2ff; --btn2Text:#1e3a8a;
       --warnBg:#fffbeb; --warnBorder:#fcd34d; --warnText:#92400e;
+      --brand:#0a5c7d;
     }
     body{margin:0;background:#f6f7fb;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
     .wrap{max-width:980px;margin:0 auto;padding:22px}
@@ -39,7 +44,7 @@
     .toggleRow input{width:18px;height:18px}
     .small{font-size:12px;color:var(--muted)}
 
-    /* Print only printArea */
+    /* ===== Print: show only #printArea (visibility approach is reliable) ===== */
     #printArea{display:none;}
     @media print{
       body *{visibility:hidden;}
@@ -47,8 +52,38 @@
       #printArea{
         display:block;
         position:fixed; left:0; top:0;
-        width:100%; padding:24px; background:#fff;
-        font-family:Arial,sans-serif; font-size:12pt; line-height:1.4;
+        width:100%;
+        padding:24px;
+        background:#fff;
+        font-family:Arial,sans-serif;
+        font-size:12pt;
+        line-height:1.35;
+      }
+    }
+
+    /* Print layout styling */
+    @media print{
+      .print-header{
+        display:flex; align-items:center; justify-content:space-between;
+        gap:18px; border-bottom:2px solid var(--brand);
+        padding-bottom:12px; margin-bottom:16px;
+      }
+      .print-logo{
+        max-height:70px; max-width:220px; object-fit:contain;
+      }
+      .print-title{
+        font-size:20pt; font-weight:700; margin:0;
+      }
+      .print-date{font-size:10pt;color:#444;margin-top:4px}
+      .print-table{width:100%;border-collapse:collapse;margin-top:10px}
+      .print-table th,.print-table td{border:1px solid #ccc;padding:10px 12px;text-align:left;font-size:11pt}
+      .print-table th{background:#f3f4f6;width:60%}
+      .print-contact{
+        margin-top:18px; padding-top:12px; border-top:1px solid #ccc;
+        font-size:11pt;
+      }
+      .print-footer{
+        margin-top:14px; font-size:9.5pt; color:#555;
       }
     }
   </style>
@@ -137,68 +172,6 @@
               </div>
             </div>
           </div>
-          /* ===== Branded Print Styling ===== */
-@media print {
-  .print-wrap {
-    font-family: Arial, sans-serif;
-    color: #111;
-  }
-
-  .print-header {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    border-bottom: 2px solid #0a5c7d;
-    padding-bottom: 14px;
-    margin-bottom: 20px;
-  }
-
-  .print-logo {
-    max-height: 70px;
-  }
-
-  .header-text h1 {
-    margin: 0;
-    font-size: 22pt;
-  }
-
-  .date {
-    font-size: 10pt;
-    color: #555;
-  }
-
-  .print-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-
-  .print-table th,
-  .print-table td {
-    border: 1px solid #ccc;
-    padding: 10px 12px;
-    font-size: 11pt;
-    text-align: left;
-  }
-
-  .print-table th {
-    background: #f3f4f6;
-    width: 60%;
-  }
-
-  .print-contact {
-    margin-top: 26px;
-    font-size: 11pt;
-  }
-
-  .print-footer {
-    margin-top: 24px;
-    font-size: 9.5pt;
-    color: #555;
-    border-top: 1px solid #ccc;
-    padding-top: 12px;
-  }
-}
         </div>
 
         <div class="field full">
@@ -229,22 +202,13 @@
 
   <script>
     function $(id){ return document.getElementById(id); }
-
     function money(n){ return "$" + (Math.round(n)).toLocaleString(); }
-
-    function paybackText(netCost, annual){
-      if(!(annual > 0) || !(netCost > 0)) return "—";
-      var yrs = netCost / annual;
-      var months = yrs * 12;
-      return (months < 12) ? (months.toFixed(1) + " months") : (yrs.toFixed(2) + " years");
-    }
 
     function showWarn(msg){
       var w = $("warn");
       w.style.display = "block";
       w.textContent = msg;
     }
-
     function clearWarn(){
       var w = $("warn");
       w.style.display = "none";
@@ -253,6 +217,13 @@
 
     function toggleControls(){
       $("controlsSection").style.display = $("controlsToggle").checked ? "block" : "none";
+    }
+
+    function paybackText(netCost, annual){
+      if(!(annual > 0) || !(netCost > 0)) return "—";
+      var yrs = netCost / annual;
+      var months = yrs * 12;
+      return (months < 12) ? (months.toFixed(1) + " months") : (yrs.toFixed(2) + " years");
     }
 
     function calculate(){
@@ -278,11 +249,14 @@
         return null;
       }
 
+      // Baseline energies
       var oldKwh = (qty * oldW * hrs * days) / 1000;
       var ledKwh = (qty * newW * hrs * days) / 1000;
 
+      // Fixture-only savings
       var fixtureSavings = (oldKwh - ledKwh) * rate;
 
+      // Controls savings
       var controlledKwh = ledKwh;
       var controlSavings = 0;
 
@@ -296,7 +270,6 @@
           showWarn("Please enter valid controls values.");
           return null;
         }
-
         if((l1Hrs + l2Hrs) > hrs){
           showWarn("Controls timing exceeds occupied hours.");
           return null;
@@ -322,22 +295,17 @@
       $("netCost").textContent = money(netCost);
       $("payback").textContent = paybackText(netCost, totalAnnual);
 
-      return {
-        fixtureSavings: $("fixtureSavings").textContent,
-        controlSavings: $("controlSavings").textContent,
-        totalSavings: $("totalSavings").textContent,
-        netCost: $("netCost").textContent,
-        payback: $("payback").textContent
-      };
+      return true;
     }
 
-    function summaryText(){
-      return "ROI Estimate\n\n" +
-        "Annual Fixture Savings: " + $("fixtureSavings").textContent + "\n" +
-        "Annual Controls Savings: " + $("controlSavings").textContent + "\n" +
-        "Total Annual Savings: " + $("totalSavings").textContent + "\n" +
-        "Net Project Cost: " + $("netCost").textContent + "\n" +
-        "Simple Payback: " + $("payback").textContent + "\n";
+    function summaryLines(){
+      return [
+        ["Annual Fixture Savings", $("fixtureSavings").textContent],
+        ["Annual Controls Savings", $("controlSavings").textContent],
+        ["Total Annual Savings", $("totalSavings").textContent],
+        ["Net Project Cost", $("netCost").textContent],
+        ["Simple Payback", $("payback").textContent]
+      ];
     }
 
     function emailResults(){
@@ -346,74 +314,57 @@
       if(calculate() === null) return;
 
       var subject = encodeURIComponent("Lighting ROI Estimate");
-      var body = encodeURIComponent(summaryText());
+      var body = "Lighting ROI Estimate\n\n";
+      var rows = summaryLines();
+      for(var i=0;i<rows.length;i++){
+        body += rows[i][0] + ": " + rows[i][1] + "\n";
+      }
+      body += "\nJeffrey Mitchell\nAll Electric Sales\njmitchell@allelectricsales.com\n847-830-8447\n";
+
       var bcc = encodeURIComponent("jmitchell@allelectricsales.com");
-
-      window.location.href = "mailto:" + encodeURIComponent(email) +
-        "?bcc=" + bcc + "&subject=" + subject + "&body=" + body;
+      window.location.href = "mailto:" + encodeURIComponent(email) + "?bcc=" + bcc + "&subject=" + subject + "&body=" + encodeURIComponent(body);
     }
-function printResults(){
-  var r = calculate();
-  if(!r) return;
 
-  var today = new Date().toLocaleDateString();
+    function printResults(){
+      if(calculate() === null) return;
 
-  $("printArea").innerHTML = `
-    <div class="print-wrap">
-      <div class="print-header">
-        <div class="logo-block">
-          <img src="aes-logo.png" alt="All Electric Sales" class="print-logo">
-        </div>
-        <div class="header-text">
-          <h1>Lighting ROI Estimate</h1>
-          <div class="date">Prepared ${today}</div>
-        </div>
-      </div>
+      var today = new Date().toLocaleDateString();
+      var rows = summaryLines();
 
-      <table class="print-table">
-        <tr>
-          <th>Annual Fixture Savings</th>
-          <td>${$("fixtureSavings").textContent}</td>
-        </tr>
-        <tr>
-          <th>Annual Controls Savings</th>
-          <td>${$("controlSavings").textContent}</td>
-        </tr>
-        <tr>
-          <th>Total Annual Savings</th>
-          <td>${$("totalSavings").textContent}</td>
-        </tr>
-        <tr>
-          <th>Net Project Cost</th>
-          <td>${$("netCost").textContent}</td>
-        </tr>
-        <tr>
-          <th>Simple Payback</th>
-          <td>${$("payback").textContent}</td>
-        </tr>
-      </table>
+      // Build print HTML with a real <img> (not a CSS background) so it prints reliably. [1](https://stackoverflow.com/questions/17942969/css-media-print-not-working-at-all)[2](https://www.codestudy.net/blog/how-can-i-force-browsers-to-print-background-images-in-css/)
+      var tableRows = "";
+      for(var i=0;i<rows.length;i++){
+        tableRows += "<tr><th>" + rows[i][0] + "</th><td>" + rows[i][1] + "</td></tr>";
+      }
 
-      <div class="print-contact">
-        <p><b>For pricing, quotes, or additional questions:</b></p>
-        <p>
-          Jeffrey Mitchell<br>
-          All Electric Sales<br>
-          <a href="mailto:jmitchell@allelectricsales.com">jmitchell@allelectricsales.com</a><br>
-          847‑830‑8447
-        </p>
-      </div>
+      $("printArea").innerHTML =
+        "<div class='print-header'>" +
+          "<img id='printLogo' class='print-logo' src='aes-logo.png' alt='AES Logo'>" +
+          "<div style='flex:1'>" +
+            "<div class='print-title'>Lighting ROI Estimate</div>" +
+            "<div class='print-date'>Prepared " + today + "</div>" +
+          "</div>" +
+        "</div>" +
+        "<table class='print-table'>" + tableRows + "</table>" +
+        "<div class='print-contact'>" +
+          "<div><b>For Quotes Or Questions:</b></div>" +
+          "<div>Jeffrey Mitchell</div>" +
+          "<div>jmitchell@allelectricsales.com</div>" +
+          "<div>847-830-8447</div>" +
+        "</div>" +
+        "<div class='print-footer'>" +
+          "This estimate is based on provided inputs and assumed operating conditions. Actual savings may vary based on usage, utility rates, and site conditions." +
+        "</div>";
 
-      <div class="print-footer">
-        <p>
-          This estimate is based on provided inputs and assumed operating conditions.
-          Actual savings may vary based on usage patterns, utility rates, and site conditions.
-        </p>
-      </div>
-    </div>
-  `;
-
-  window.print();
-}
+      // Wait for logo to load before printing (prevents blank logo in PDF). [3](https://stackoverflow.com/questions/59313139/image-not-printing-on-window-print)[4](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Printing)
+      var img = $("printLogo");
+      if(img && !img.complete){
+        img.onload = function(){ window.print(); };
+        img.onerror = function(){ window.print(); };
+      } else {
+        window.print();
+      }
+    }
 
     // Wire events
     $("controlsToggle").addEventListener("change", toggleControls);

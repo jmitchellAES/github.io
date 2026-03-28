@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lighting ROI Calculator</title>
 
-<!-- Helps while iterating on GitHub Pages -->
 <meta http-equiv="cache-control" content="no-cache" />
 <meta http-equiv="expires" content="0" />
 <meta http-equiv="pragma" content="no-cache" />
@@ -46,17 +45,6 @@
     display:block;
   }
   h1{ margin:0; }
-  .sub{
-    margin-top:6px;
-    color:#555;
-    font-size:12px;
-    line-height: 1.35;
-  }
-  .build{
-    margin-top:6px;
-    font-size:12px;
-    color:#555;
-  }
 
   label{ font-size:13px; font-weight:bold; }
   input, select{
@@ -87,6 +75,18 @@
     margin-bottom: 14px;
   }
   .small{ font-size: 12px; color: #555; margin-top: 6px; }
+
+  .toggleRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 6px;
+  }
+  .toggleRow input{
+    width:18px;
+    height:18px;
+    margin:0;
+  }
 
   .row{
     display:flex;
@@ -128,6 +128,15 @@
   th{ background:#f0f3f6; }
   .highlight{ font-weight:bold; background:#f9fbfd; }
 
+  .footer{
+    margin-top: 14px;
+    font-size: 12px;
+    color: #444;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    line-height: 1.35;
+  }
+
   /* Print cleanly: hide buttons only */
   @media print{
     body{ background:#fff; padding: 0; }
@@ -141,13 +150,9 @@
 <div class="container">
 
   <div class="header">
-    <img class="logo" src="aes-logo.png" alt="AES logo">
+    <img class="logo" src="aes-logo.png" alt="AES Logo">
     <div>
       <h1>Lighting ROI Calculator</h1>
-      <div class="sub">
-        Jeffrey Mitchell • jmitchell@allelectricsales.com • 847 830 8447
-      </div>
-      <div class="build">Build ID: <b id="buildId"></b></div>
     </div>
   </div>
 
@@ -204,12 +209,12 @@
     </div>
   </div>
 
+  <!-- Controls: checkbox instead of dropdown -->
   <div class="panel">
-    <label>Controls</label>
-    <select id="controlsMode">
-      <option value="none" selected>None</option>
-      <option value="twoLevel">2‑Level Dim → Off (Level 1 → Level 2 → Off)</option>
-    </select>
+    <div class="toggleRow">
+      <input id="controlsEnabled" type="checkbox">
+      <label style="margin:0;">Add Controls (2‑Level Dim → Off)</label>
+    </div>
 
     <div id="controlsFields" style="display:none;">
       <div class="grid">
@@ -275,14 +280,16 @@
     </tr>
   </table>
 
-  <div class="small" style="margin-top:12px;">
-    Prepared by Jeffrey Mitchell • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447
+  <!-- Footer keeps your info + Build ID -->
+  <div class="footer">
+    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales •
+    jmitchell@allelectricsales.com • 847 830 8447<br>
+    Build ID: <b id="buildId"></b>
   </div>
 </div>
 
 <script>
 (function(){
-  // Build ID helps confirm you’re seeing the newest version (GitHub Pages can cache) [1](https://stackoverflow.com/questions/24713112/why-does-my-github-page-not-update-its-content)
   document.getElementById("buildId").textContent = new Date().toISOString();
 
   const $ = (id)=>document.getElementById(id);
@@ -304,7 +311,7 @@
   }
 
   function toggleControlsUI(){
-    $("controlsFields").style.display = ($("controlsMode").value === "twoLevel") ? "block" : "none";
+    $("controlsFields").style.display = $("controlsEnabled").checked ? "block" : "none";
   }
 
   function calc(){
@@ -337,15 +344,15 @@
     const oldKwh = (qty * oldW * hrs * days) / 1000;
     const ledKwh = (qty * newW * hrs * days) / 1000;
 
-    // Fixtures-only annual savings
+    // Fixtures-only annual savings and cost
     const annualFix = (oldKwh - ledKwh) * rate;
     const netFix = Math.max(0, fixtureCost - rebate);
 
-    // Controls scenario defaults
+    // Controls scenario defaults to fixtures-only unless enabled
     let annualCtrl = annualFix;
     let netCtrl = netFix;
 
-    if($("controlsMode").value === "twoLevel"){
+    if($("controlsEnabled").checked){
       const l1Pct = Number($("lvl1Pct").value) / 100;
       const l2Pct = Number($("lvl2Pct").value) / 100;
       const l1Hrs = Number($("lvl1Min").value) / 60;
@@ -360,8 +367,7 @@
         return null;
       }
 
-      // Real dimming math:
-      // Level 1 is starting level, then Level 2, then OFF for remainder of occupied time.
+      // Real dimming math: Level 1 is starting level, then Level 2, then OFF (within occupied hours).
       const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
       const controlledKwh = dailyControlledKwh * days;
 
@@ -370,7 +376,7 @@
       // Clamp if rounding produces tiny negative incremental
       if(annualCtrl < annualFix) annualCtrl = annualFix;
 
-      // Controls cost applies only when controls are selected
+      // Controls cost applies when controls enabled
       netCtrl = Math.max(0, fixtureCost + controlsCost - rebate);
     }
 
@@ -399,7 +405,6 @@
       return;
     }
 
-    // Build body (no mention of BCC anywhere)
     let body =
       "Lighting ROI Estimate\n\n" +
       "Project: " + r.project + "\n\n" +
@@ -413,14 +418,14 @@
       "  Simple Payback: " + payback(r.netCtrl, r.annualCtrl) + "\n\n" +
       "Incremental Controls Savings: " + money(r.inc) + " / year\n\n";
 
-    if($("controlsMode").value === "twoLevel"){
+    if($("controlsEnabled").checked){
       body +=
-        "Controls Mode: 2‑Level Dim → Off\n" +
+        "Controls Settings:\n" +
         "  Level 1: " + $("lvl1Pct").value + "% for " + $("lvl1Min").value + " min\n" +
         "  Level 2: " + $("lvl2Pct").value + "% for " + $("lvl2Min").value + " min\n" +
         "  Then OFF\n\n";
     } else {
-      body += "Controls Mode: None\n\n";
+      body += "Controls: None\n\n";
     }
 
     body +=
@@ -443,8 +448,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function(){
-    // addEventListener avoids inline handlers being blocked under strict CSP 
-    $("controlsMode").addEventListener("change", toggleControlsUI);
+    $("controlsEnabled").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);
     $("btnEmail").addEventListener("click", emailCustomer);
     $("btnPrint").addEventListener("click", function(){ window.print(); });

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AES ROI Calculator</title>
+  <style>
+    :root{
+      --border:#e5e7eb; --text:#111827; --muted:#6b7280; --bg:#ffffff;
+      --btn:#111827; --btnText:#fff; --btn2:#eef2ff; --btn2Text:#1e3a8a;
+      --warnBg:#fffbeb; --warnBorder:#fcd34d; --warnText:#92400e;
+    }
+    body{margin:0;background:#f6f7fb;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:980px;margin:0 auto;padding:22px}
+    .card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 1px 10px rgba(0,0,0,.04)}
+    h1{margin:0 0 6px;font-size:22px}
+    p.sub{margin:0 0 14px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .field{grid-column:span 6;display:flex;flex-direction:column;gap:6px}
+    .third{grid-column:span 4}
+    .full{grid-column:span 12}
+    @media (max-width:820px){.field,.third{grid-column:span 12}}
+    label{font-size:13px;color:#374151}
+    input,select{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:15px;background:#fff}
+    .hint{font-size:12px;color:var(--muted);margin-top:-2px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
+    .primary{background:var(--btn);color:var(--btnText)}
+    .ghost{background:var(--btn2);color:var(--btn2Text)}
+    .divider{margin-top:16px;border-top:1px solid var(--border);padding-top:16px}
+    .controls{display:none;margin-top:12px;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#fafafa}
+    .results{margin-top:14px;display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .metric{grid-column:span 4;border:1px solid var(--border);border-radius:14px;padding:12px;background:#fafafa}
+    @media (max-width:820px){.metric{grid-column:span 12}}
+    .k{font-size:12px;color:var(--muted)}
+    .v{font-size:20px;font-weight:900;margin-top:6px}
+    .warn{display:none;margin-top:12px;padding:10px;border-radius:12px;background:var(--warnBg);border:1px solid var(--warnBorder);color:var(--warnText);font-size:12px}
+    .toggleRow{display:flex;gap:10px;align-items:center}
+    .toggleRow input{width:18px;height:18px}
+    .small{font-size:12px;color:var(--muted)}
+
+    /* Print only printArea */
+    #printArea{display:none;}
+    @media print{
+      body *{visibility:hidden;}
+      #printArea, #printArea *{visibility:visible;}
+      #printArea{
+        display:block;
+        position:fixed; left:0; top:0;
+        width:100%; padding:24px; background:#fff;
+        font-family:Arial,sans-serif; font-size:12pt; line-height:1.4;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>AES ROI Calculator</h1>
+      <p class="sub">Estimate Annual Savings And Simple Payback For A Lighting Upgrade.</p>
+
+      <div class="grid" role="form" aria-label="ROI Calculator">
+        <div class="field third">
+          <label>Number Of Fixtures</label>
+          <input id="qty" type="number" min="1" step="1" value="50">
+        </div>
+
+        <div class="field third">
+          <label>Old Wattage (W)</label>
+          <input id="oldW" type="number" min="0" step="1" value="400">
+        </div>
+
+        <div class="field third">
+          <label>New Wattage (W)</label>
+          <input id="newW" type="number" min="0" step="1" value="150">
+        </div>
+
+        <div class="field third">
+          <label>Hours Per Day (Occupied)</label>
+          <input id="hours" type="number" min="0" max="24" step="0.1" value="12">
+        </div>
+
+        <div class="field third">
+          <label>Days Per Year</label>
+          <input id="days" type="number" min="0" step="1" value="365">
+        </div>
+
+        <div class="field third">
+          <label>Electric Rate ($/kWh)</label>
+          <input id="rate" type="number" min="0" step="0.0001" value="0.1228">
+          <div class="hint">Estimated Illinois Rate</div>
+        </div>
+
+        <div class="field third">
+          <label>Fixture Upgrade Cost ($)</label>
+          <input id="fixtureCost" type="number" min="0" step="1" value="8500">
+        </div>
+
+        <div class="field third">
+          <label>Controls Cost ($)</label>
+          <input id="controlsCost" type="number" min="0" step="1" value="1000">
+        </div>
+
+        <div class="field third">
+          <label>Rebates / Incentives ($)</label>
+          <input id="rebate" type="number" min="0" step="1" value="0">
+        </div>
+
+        <div class="field full divider">
+          <div class="toggleRow">
+            <input id="controlsToggle" type="checkbox">
+            <label for="controlsToggle" style="margin:0;font-weight:800">Add Network Lighting Controls</label>
+          </div>
+
+          <div id="controlsSection" class="controls">
+            <div class="grid">
+              <div class="field third">
+                <label>Dim Level 1 (% Output) (Starting Level)</label>
+                <input id="lvl1Pct" type="number" min="0" max="100" step="1" value="70">
+              </div>
+              <div class="field third">
+                <label>Time At Dim Level 1 (Minutes)</label>
+                <input id="lvl1Min" type="number" min="0" max="1440" step="1" value="30">
+              </div>
+              <div class="field third">
+                <label>Dim Level 2 (% Output)</label>
+                <input id="lvl2Pct" type="number" min="0" max="100" step="1" value="30">
+              </div>
+              <div class="field third">
+                <label>Time At Dim Level 2 (Minutes)</label>
+                <input id="lvl2Min" type="number" min="0" max="1440" step="1" value="30">
+              </div>
+              <div class="field full">
+                <div class="small">
+                  After Level 2 timeout, fixtures turn <b>OFF</b>. On motion, fixtures return to <b>Dim Level 1</b>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>Customer Email</label>
+          <input id="custEmail" type="email" placeholder="customer@company.com">
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary" type="button" id="btnCalc">Calculate</button>
+        <button class="ghost" type="button" id="btnEmail">Email Results</button>
+        <button class="ghost" type="button" id="btnPrint">Print / Save As PDF</button>
+      </div>
+
+      <div class="results" aria-live="polite">
+        <div class="metric"><div class="k">Annual $ Saved (Fixtures Only)</div><div class="v" id="fixtureSavings">—</div></div>
+        <div class="metric"><div class="k">Annual $ Saved From Dimming Controls</div><div class="v" id="controlSavings">—</div></div>
+        <div class="metric"><div class="k">Total Annual $ Saved</div><div class="v" id="totalSavings">—</div></div>
+        <div class="metric"><div class="k">Net Project Cost</div><div class="v" id="netCost">—</div></div>
+        <div class="metric"><div class="k">Simple Payback</div><div class="v" id="payback">—</div></div>
+      </div>
+
+      <div class="warn" id="warn"></div>
+    </div>
+  </div>
+
+  <div id="printArea"></div>
+
+  <script>
+    function $(id){ return document.getElementById(id); }
+
+    function money(n){ return "$" + (Math.round(n)).toLocaleString(); }
+
+    function paybackText(netCost, annual){
+      if(!(annual > 0) || !(netCost > 0)) return "—";
+      var yrs = netCost / annual;
+      var months = yrs * 12;
+      return (months < 12) ? (months.toFixed(1) + " months") : (yrs.toFixed(2) + " years");
+    }
+
+    function showWarn(msg){
+      var w = $("warn");
+      w.style.display = "block";
+      w.textContent = msg;
+    }
+
+    function clearWarn(){
+      var w = $("warn");
+      w.style.display = "none";
+      w.textContent = "";
+    }
+
+    function toggleControls(){
+      $("controlsSection").style.display = $("controlsToggle").checked ? "block" : "none";
+    }
+
+    function calculate(){
+      clearWarn();
+
+      var qty = Number($("qty").value);
+      var oldW = Number($("oldW").value);
+      var newW = Number($("newW").value);
+      var hrs = Number($("hours").value);
+      var days = Number($("days").value);
+      var rate = Number($("rate").value);
+
+      var fixtureCost = Number($("fixtureCost").value);
+      var controlsCost = Number($("controlsCost").value);
+      var rebate = Number($("rebate").value);
+
+      if(!(qty > 0) || isNaN(qty) || isNaN(oldW) || isNaN(newW) || isNaN(hrs) || isNaN(days) || isNaN(rate)){
+        showWarn("Please enter valid numbers.");
+        return null;
+      }
+      if(hrs < 0 || hrs > 24){
+        showWarn("Hours per day must be between 0 and 24.");
+        return null;
+      }
+
+      var oldKwh = (qty * oldW * hrs * days) / 1000;
+      var ledKwh = (qty * newW * hrs * days) / 1000;
+
+      var fixtureSavings = (oldKwh - ledKwh) * rate;
+
+      var controlledKwh = ledKwh;
+      var controlSavings = 0;
+
+      if($("controlsToggle").checked){
+        var l1Pct = Number($("lvl1Pct").value) / 100;
+        var l2Pct = Number($("lvl2Pct").value) / 100;
+        var l1Hrs = Number($("lvl1Min").value) / 60;
+        var l2Hrs = Number($("lvl2Min").value) / 60;
+
+        if(isNaN(l1Pct) || isNaN(l2Pct) || isNaN(l1Hrs) || isNaN(l2Hrs)){
+          showWarn("Please enter valid controls values.");
+          return null;
+        }
+
+        if((l1Hrs + l2Hrs) > hrs){
+          showWarn("Controls timing exceeds occupied hours.");
+          return null;
+        }
+
+        // Starting level is Level 1 (not 100%).
+        // Occupied time is: Level 1 for l1Hrs, Level 2 for l2Hrs, OFF for remainder.
+        var dailyControlledKwh = (qty * newW * ((l1Hrs * l1Pct) + (l2Hrs * l2Pct))) / 1000;
+        controlledKwh = dailyControlledKwh * days;
+
+        controlSavings = (ledKwh - controlledKwh) * rate;
+        if(controlSavings < 0) controlSavings = 0;
+      }
+
+      var totalAnnual = fixtureSavings + controlSavings;
+
+      var netCost = fixtureCost + ($("controlsToggle").checked ? controlsCost : 0) - rebate;
+      if(netCost < 0) netCost = 0;
+
+      $("fixtureSavings").textContent = money(fixtureSavings) + " / year";
+      $("controlSavings").textContent = ($("controlsToggle").checked ? (money(controlSavings) + " / year") : "$0");
+      $("totalSavings").textContent = money(totalAnnual) + " / year";
+      $("netCost").textContent = money(netCost);
+      $("payback").textContent = paybackText(netCost, totalAnnual);
+
+      return {
+        fixtureSavings: $("fixtureSavings").textContent,
+        controlSavings: $("controlSavings").textContent,
+        totalSavings: $("totalSavings").textContent,
+        netCost: $("netCost").textContent,
+        payback: $("payback").textContent
+      };
+    }
+
+    function summaryText(){
+      return "ROI Estimate\n\n" +
+        "Annual Fixture Savings: " + $("fixtureSavings").textContent + "\n" +
+        "Annual Controls Savings: " + $("controlSavings").textContent + "\n" +
+        "Total Annual Savings: " + $("totalSavings").textContent + "\n" +
+        "Net Project Cost: " + $("netCost").textContent + "\n" +
+        "Simple Payback: " + $("payback").textContent + "\n";
+    }
+
+    function emailResults(){
+      var email = ($("custEmail").value || "").trim();
+      if(!email){ showWarn("Enter a customer email to send results."); return; }
+      if(calculate() === null) return;
+
+      var subject = encodeURIComponent("Lighting ROI Estimate");
+      var body = encodeURIComponent(summaryText());
+      var bcc = encodeURIComponent("jmitchell@allelectricsales.com");
+
+      window.location.href = "mailto:" + encodeURIComponent(email) +
+        "?bcc=" + bcc + "&subject=" + subject + "&body=" + body;
+    }
+
+    function printResults(){
+      if(calculate() === null) return;
+
+      // Print only #printArea via @media print
+      var html = summaryText().split("\n").join("<br>");
+      $("printArea").innerHTML = "<h1>ROI Estimate</h1><div>" + html + "</div>";
+      window.print();
+    }
+
+    // Wire events
+    $("controlsToggle").addEventListener("change", toggleControls);
+    $("btnCalc").addEventListener("click", calculate);
+    $("btnEmail").addEventListener("click", emailResults);
+    $("btnPrint").addEventListener("click", printResults);
+
+    // Init
+    toggleControls();
+  </script>
+</body>
+</html>

@@ -3,96 +3,165 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lighting ROI Calculator</title>
+<title>AES Lighting ROI Calculator</title>
+
+<!-- Helps reduce caching pain while iterating on GitHub Pages -->
 <meta http-equiv="cache-control" content="no-cache" />
 <meta http-equiv="expires" content="0" />
 <meta http-equiv="pragma" content="no-cache" />
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  margin: 0;
-  padding: 24px;
-}
+  :root{
+    --brand:#0a5c7d;
+    --bg:#f4f6f8;
+    --card:#ffffff;
+    --border:#d9dee3;
+    --muted:#6b7280;
+    --soft:#f8fafc;
+  }
+  body{
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 24px;
+    color:#111;
+  }
+  .container{
+    max-width: 1040px;
+    margin: auto;
+    background: var(--card);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.08);
+  }
+  .header{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    margin-bottom: 14px;
+  }
+  .logo{
+    max-height: 62px;
+    max-width: 240px;
+    display:block;
+  }
+  h1{ margin:0; }
+  .sub{
+    margin-top:6px;
+    color:#555;
+    font-size:12px;
+    line-height: 1.35;
+  }
+  .build{
+    margin-top:6px;
+    font-size:12px;
+    color:#555;
+  }
 
-.container {
-  max-width: 900px;
-  margin: auto;
-  background: #fff;
-  padding: 24px;
-  border-radius: 10px;
-}
+  label{ font-size:13px; font-weight:bold; }
+  input, select{
+    width:100%;
+    padding: 10px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background:#fff;
+    box-sizing: border-box;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 900px){
+    .grid{ grid-template-columns: 1fr; }
+    .header{ flex-direction: column; align-items:flex-start; }
+  }
 
-h1 { margin-top: 0; }
+  .panel{
+    border: 1px solid var(--border);
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .small{ font-size: 12px; color: #555; margin-top: 6px; }
 
-.build {
-  font-size: 12px;
-  color: #555;
-  margin-bottom: 10px;
-}
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top: 6px;
+  }
+  button{
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .primary{ background: var(--brand); color:#fff; }
+  .secondary{ background:#e8eef3; color: var(--brand); }
 
-label { font-size: 13px; font-weight: bold; }
+  .warn{
+    display:none;
+    margin-top:12px;
+    padding: 10px;
+    border-radius: 12px;
+    background:#fffbeb;
+    border:1px solid #fcd34d;
+    color:#92400e;
+    font-size:12px;
+  }
 
-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  margin-bottom: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
+  table{
+    width:100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+  }
+  th, td{
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align:left;
+  }
+  th{ background:#f0f3f6; }
+  .highlight{ font-weight:bold; background:#f9fbfd; }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-button {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.primary { background: #0a5c7d; color: #fff; }
-.secondary { background: #e8eef3; color: #0a5c7d; }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-th, td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  text-align: left;
-}
-
-th { background: #f0f3f6; }
-
-.warn {
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 8px;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-  color: #92400e;
-  font-size: 12px;
-  display: none;
-}
+  /* Print styling (keep simple: don’t hide the whole page) */
+  @media print{
+    body{ background:#fff; padding: 0; }
+    .container{ box-shadow:none; }
+    .no-print{ display:none !important; }
+    input, select{ border:1px solid #999; }
+  }
 </style>
 </head>
 
 <body>
-
 <div class="container">
-  <div class="build">Build ID: <b id="buildId">2026-03-28-A</b></div>
 
-  <h1>Lighting ROI Calculator</h1>
+  <div class="header">
+    <img class="logo" src="aes-logo.png" alt="AES Logo">
+    <div>
+      <h1>Lighting ROI Calculator</h1>
+      <div class="sub">
+        Jeffrey Mitchell • jmitchell@allelectricsales.com • 847 830 8447
+      </div>
+      <div class="build">Build ID: <b id="buildId"></b></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="grid-column: span 2;">
+      <label>Project Name</label>
+      <input id="projectName" type="text" placeholder="e.g., ABC Warehouse Retrofit">
+    </div>
+    <div>
+      <label>Customer Email (To:)</label>
+      <input id="custEmail" type="email" placeholder="customer@company.com">
+    </div>
+  </div>
 
   <div class="grid">
     <div>
@@ -109,7 +178,7 @@ th { background: #f0f3f6; }
     </div>
 
     <div>
-      <label>Hours Per Day</label>
+      <label>Hours Per Day (Occupied)</label>
       <input id="hours" type="number" value="12">
     </div>
     <div>
@@ -119,6 +188,7 @@ th { background: #f0f3f6; }
     <div>
       <label>Electric Rate ($/kWh)</label>
       <input id="rate" type="number" step="0.0001" value="0.1228">
+      <div class="small">Estimated Illinois Rate</div>
     </div>
 
     <div>
@@ -135,12 +205,51 @@ th { background: #f0f3f6; }
     </div>
   </div>
 
-  <button class="primary" id="btnCalc" type="button">Calculate</button>
-  <button class="secondary" id="btnPrint" type="button">Print / Save as PDF</button>
+  <div class="panel">
+    <label>Controls</label>
+    <select id="controlsMode">
+      <option value="none" selected>None</option>
+      <option value="twoLevel">2‑Level Dim → Off (Level 1 → Level 2 → Off)</option>
+    </select>
+
+    <div id="controlsFields" style="display:none;">
+      <div class="grid">
+        <div>
+          <label>Dim Level 1 (% Output) (Starting Level)</label>
+          <input id="lvl1Pct" type="number" value="70">
+        </div>
+        <div>
+          <label>Time at Level 1 (Minutes)</label>
+          <input id="lvl1Min" type="number" value="30">
+        </div>
+        <div>
+          <label>Dim Level 2 (% Output)</label>
+          <input id="lvl2Pct" type="number" value="30">
+        </div>
+        <div>
+          <label>Time at Level 2 (Minutes)</label>
+          <input id="lvl2Min" type="number" value="30">
+        </div>
+      </div>
+      <div class="small">
+        Model: On motion → Level 1. After Level 1 time → Level 2. After Level 2 time → OFF until motion again.
+      </div>
+    </div>
+  </div>
+
+  <div class="row no-print">
+    <button class="primary" id="btnCalc" type="button">Calculate</button>
+    <button class="secondary" id="btnEmail" type="button">Email Customer</button>
+    <button class="secondary" id="btnPrint" type="button">Print / Save as PDF</button>
+  </div>
 
   <div class="warn" id="warn"></div>
 
   <table>
+    <tr>
+      <th>Project</th>
+      <td colspan="2" id="outProject">—</td>
+    </tr>
     <tr>
       <th></th>
       <th>Fixtures Only</th>
@@ -148,83 +257,206 @@ th { background: #f0f3f6; }
     </tr>
     <tr>
       <td>Annual Savings</td>
-      <td id="sFixtures">—</td>
-      <td id="sControls">—</td>
+      <td id="sFix">—</td>
+      <td id="sCtrl">—</td>
     </tr>
     <tr>
       <td>Net Project Cost</td>
-      <td id="cFixtures">—</td>
-      <td id="cControls">—</td>
+      <td id="cFix">—</td>
+      <td id="cCtrl">—</td>
+    </tr>
+    <tr class="highlight">
+      <td>Simple Payback</td>
+      <td id="pFix">—</td>
+      <td id="pCtrl">—</td>
     </tr>
     <tr>
-      <td>Simple Payback</td>
-      <td id="pFixtures">—</td>
-      <td id="pControls">—</td>
+      <td>Incremental Controls Savings</td>
+      <td colspan="2" id="incCtrl">—</td>
     </tr>
   </table>
+
+  <div class="small" style="margin-top:12px;">
+    Prepared by Jeffrey Mitchell • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447
+  </div>
 </div>
 
 <script>
-function money(n) { return "$" + Math.round(n).toLocaleString(); }
+(function(){
+  // Build ID helps confirm you’re seeing the newest version (GitHub Pages can cache) [1](https://stackoverflow.com/questions/24713112/why-does-my-github-page-not-update-its-content)
+  document.getElementById("buildId").textContent = new Date().toISOString();
 
-function showWarn(msg){
-  const w = document.getElementById("warn");
-  w.style.display = "block";
-  w.textContent = msg;
-}
+  const $ = (id)=>document.getElementById(id);
 
-function clearWarn(){
-  const w = document.getElementById("warn");
-  w.style.display = "none";
-  w.textContent = "";
-}
-
-function calculate() {
-  clearWarn();
-
-  const qty = Number(document.getElementById("qty").value);
-  const oldW = Number(document.getElementById("oldW").value);
-  const newW = Number(document.getElementById("newW").value);
-  const hrs = Number(document.getElementById("hours").value);
-  const days = Number(document.getElementById("days").value);
-  const rate = Number(document.getElementById("rate").value);
-
-  const fixtureCost = Number(document.getElementById("fixtureCost").value);
-  const controlsCost = Number(document.getElementById("controlsCost").value);
-  const rebate = Number(document.getElementById("rebate").value);
-
-  if(!(qty > 0) || [oldW,newW,hrs,days,rate,fixtureCost,controlsCost,rebate].some(x => Number.isNaN(x))){
-    showWarn("Please enter valid numbers.");
-    return;
+  function warn(msg){
+    $("warn").style.display="block";
+    $("warn").textContent = msg;
+  }
+  function clearWarn(){
+    $("warn").style.display="none";
+    $("warn").textContent = "";
+  }
+  function money(n){
+    return "$" + Math.round(n).toLocaleString();
+  }
+  function payback(cost, savings){
+    if(!(savings > 0) || !(cost > 0)) return "—";
+    return (cost / savings).toFixed(2) + " years";
   }
 
-  const oldKwh = qty * oldW * hrs * days / 1000;
-  const newKwh = qty * newW * hrs * days / 1000;
+  function toggleControlsUI(){
+    $("controlsFields").style.display = ($("controlsMode").value === "twoLevel") ? "block" : "none";
+  }
 
-  const fixtureSavings = (oldKwh - newKwh) * rate;
-  const controlsSavings = fixtureSavings * 0.20; // unchanged baseline uplift
+  function calc(){
+    clearWarn();
 
-  const netFixtureCost = Math.max(0, fixtureCost - rebate);
-  const netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
+    const project = ($("projectName").value || "").trim() || "—";
+    const customerEmail = ($("custEmail").value || "").trim();
 
-  document.getElementById("sFixtures").innerText = money(fixtureSavings) + " / year";
-  document.getElementById("sControls").innerText = money(fixtureSavings + controlsSavings) + " / year";
+    const qty = Number($("qty").value);
+    const oldW = Number($("oldW").value);
+    const newW = Number($("newW").value);
+    const hrs = Number($("hours").value);
+    const days = Number($("days").value);
+    const rate = Number($("rate").value);
 
-  document.getElementById("cFixtures").innerText = money(netFixtureCost);
-  document.getElementById("cControls").innerText = money(netControlsCost);
+    const fixtureCost = Number($("fixtureCost").value);
+    const controlsCost = Number($("controlsCost").value);
+    const rebate = Number($("rebate").value);
 
-  document.getElementById("pFixtures").innerText =
-    (netFixtureCost / fixtureSavings).toFixed(2) + " years";
+    if(!(qty > 0) || [oldW,newW,hrs,days,rate,fixtureCost,controlsCost,rebate].some(v=>Number.isNaN(v))){
+      warn("Please enter valid numbers.");
+      return null;
+    }
+    if(hrs < 0 || hrs > 24){
+      warn("Hours per day must be between 0 and 24.");
+      return null;
+    }
 
-  document.getElementById("pControls").innerText =
-    (netControlsCost / (fixtureSavings + controlsSavings)).toFixed(2) + " years";
-}
+    // Annual baseline energy
+    const oldKwh = (qty * oldW * hrs * days) / 1000;
+    const ledKwh = (qty * newW * hrs * days) / 1000;
 
-document.addEventListener("DOMContentLoaded", function(){
-  document.getElementById("btnCalc").addEventListener("click", calculate);
-  document.getElementById("btnPrint").addEventListener("click", function(){ window.print(); });
-});
+    // Fixtures-only annual savings
+    const annualFix = (oldKwh - ledKwh) * rate;
+    const netFix = Math.max(0, fixtureCost - rebate);
+
+    // Controls scenario defaults
+    let annualCtrl = annualFix;
+    let netCtrl = netFix;
+
+    if($("controlsMode").value === "twoLevel"){
+      const l1Pct = Number($("lvl1Pct").value) / 100;
+      const l2Pct = Number($("lvl2Pct").value) / 100;
+      const l1Hrs = Number($("lvl1Min").value) / 60;
+      const l2Hrs = Number($("lvl2Min").value) / 60;
+
+      if([l1Pct,l2Pct,l1Hrs,l2Hrs].some(v=>Number.isNaN(v))){
+        warn("Please enter valid controls values.");
+        return null;
+      }
+      if((l1Hrs + l2Hrs) > hrs){
+        warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours.");
+        return null;
+      }
+
+      // Real dimming math:
+      // Level 1 is starting level, then Level 2, then OFF for remainder of occupied time.
+      const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
+      const controlledKwh = dailyControlledKwh * days;
+
+      annualCtrl = (oldKwh - controlledKwh) * rate;
+
+      // Clamp if rounding produces tiny negative incremental
+      if(annualCtrl < annualFix) annualCtrl = annualFix;
+
+      // Controls cost applies only in controls scenario
+      netCtrl = Math.max(0, fixtureCost + controlsCost - rebate);
+    }
+
+    const inc = annualCtrl - annualFix;
+
+    // Render
+    $("outProject").textContent = project;
+    $("sFix").textContent = money(annualFix) + " / year";
+    $("sCtrl").textContent = money(annualCtrl) + " / year";
+    $("cFix").textContent = money(netFix);
+    $("cCtrl").textContent = money(netCtrl);
+    $("pFix").textContent = payback(netFix, annualFix);
+    $("pCtrl").textContent = payback(netCtrl, annualCtrl);
+    $("incCtrl").textContent = money(inc) + " / year";
+
+    return {
+      project, customerEmail,
+      annualFix, annualCtrl, netFix, netCtrl, inc,
+      controlsMode: $("controlsMode").value
+    };
+  }
+
+  function emailCustomer(){
+    const r = calc();
+    if(!r) return;
+
+    const to = (r.customerEmail || "").trim();
+    if(!to){
+      warn("Enter the customer email (To:).");
+      return;
+    }
+
+    // Build body (no mention of BCC anywhere)
+    let body =
+      "Lighting ROI Estimate\n\n" +
+      "Project: " + r.project + "\n\n" +
+      "Fixtures Only:\n" +
+      "  Annual Savings: " + money(r.annualFix) + " / year\n" +
+      "  Net Project Cost: " + money(r.netFix) + "\n" +
+      "  Simple Payback: " + payback(r.netFix, r.annualFix) + "\n\n" +
+      "Fixtures + Controls:\n" +
+      "  Annual Savings: " + money(r.annualCtrl) + " / year\n" +
+      "  Net Project Cost: " + money(r.netCtrl) + "\n" +
+      "  Simple Payback: " + payback(r.netCtrl, r.annualCtrl) + "\n\n" +
+      "Incremental Controls Savings: " + money(r.inc) + " / year\n\n";
+
+    if(r.controlsMode === "twoLevel"){
+      body +=
+        "Controls Mode: 2-Level Dim → Off\n" +
+        "  Level 1: " + $("lvl1Pct").value + "% for " + $("lvl1Min").value + " min\n" +
+        "  Level 2: " + $("lvl2Pct").value + "% for " + $("lvl2Min").value + " min\n" +
+        "  Then OFF\n\n";
+    } else {
+      body += "Controls Mode: None\n\n";
+    }
+
+    body +=
+      "Prepared by:\n" +
+      "Jeffrey Mitchell\n" +
+      "All Electric Sales\n" +
+      "jmitchell@allelectricsales.com\n" +
+      "847 830 8447\n";
+
+    const subject = encodeURIComponent("Lighting ROI Estimate - " + r.project);
+
+    // To customer, BCC you (customer will not see BCC on receipt; we do not mention it)
+    const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
+
+    window.location.href =
+      "mailto:" + encodeURIComponent(to) +
+      "?bcc=" + bcc +
+      "&subject=" + subject +
+      "&body=" + encodeURIComponent(body);
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    // Use addEventListener to avoid CSP blocking inline handlers 
+    $("controlsMode").addEventListener("change", toggleControlsUI);
+    $("btnCalc").addEventListener("click", calc);
+    $("btnEmail").addEventListener("click", emailCustomer);
+    $("btnPrint").addEventListener("click", function(){ window.print(); });
+
+    toggleControlsUI();
+  });
+})();
 </script>
-
 </body>
 </html>

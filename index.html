@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AES Lighting ROI Calculator</title>
+<title>Lighting ROI Calculator</title>
 
-<!-- Helps reduce caching pain while iterating on GitHub Pages -->
+<!-- Helps while iterating on GitHub Pages -->
 <meta http-equiv="cache-control" content="no-cache" />
 <meta http-equiv="expires" content="0" />
 <meta http-equiv="pragma" content="no-cache" />
@@ -128,12 +128,11 @@
   th{ background:#f0f3f6; }
   .highlight{ font-weight:bold; background:#f9fbfd; }
 
-  /* Print styling (keep simple: don’t hide the whole page) */
+  /* Print cleanly: hide buttons only */
   @media print{
     body{ background:#fff; padding: 0; }
     .container{ box-shadow:none; }
     .no-print{ display:none !important; }
-    input, select{ border:1px solid #999; }
   }
 </style>
 </head>
@@ -142,7 +141,7 @@
 <div class="container">
 
   <div class="header">
-    <img class="logo" src="aes-logo.png" alt="AES Logo">
+    <img class="logo" src="aes-logo.png" alt="AES logo">
     <div>
       <h1>Lighting ROI Calculator</h1>
       <div class="sub">
@@ -312,7 +311,7 @@
     clearWarn();
 
     const project = ($("projectName").value || "").trim() || "—";
-    const customerEmail = ($("custEmail").value || "").trim();
+    const toEmail = ($("custEmail").value || "").trim();
 
     const qty = Number($("qty").value);
     const oldW = Number($("oldW").value);
@@ -371,7 +370,7 @@
       // Clamp if rounding produces tiny negative incremental
       if(annualCtrl < annualFix) annualCtrl = annualFix;
 
-      // Controls cost applies only in controls scenario
+      // Controls cost applies only when controls are selected
       netCtrl = Math.max(0, fixtureCost + controlsCost - rebate);
     }
 
@@ -387,18 +386,14 @@
     $("pCtrl").textContent = payback(netCtrl, annualCtrl);
     $("incCtrl").textContent = money(inc) + " / year";
 
-    return {
-      project, customerEmail,
-      annualFix, annualCtrl, netFix, netCtrl, inc,
-      controlsMode: $("controlsMode").value
-    };
+    return { project, toEmail, annualFix, annualCtrl, netFix, netCtrl, inc };
   }
 
   function emailCustomer(){
     const r = calc();
     if(!r) return;
 
-    const to = (r.customerEmail || "").trim();
+    const to = (r.toEmail || "").trim();
     if(!to){
       warn("Enter the customer email (To:).");
       return;
@@ -418,9 +413,9 @@
       "  Simple Payback: " + payback(r.netCtrl, r.annualCtrl) + "\n\n" +
       "Incremental Controls Savings: " + money(r.inc) + " / year\n\n";
 
-    if(r.controlsMode === "twoLevel"){
+    if($("controlsMode").value === "twoLevel"){
       body +=
-        "Controls Mode: 2-Level Dim → Off\n" +
+        "Controls Mode: 2‑Level Dim → Off\n" +
         "  Level 1: " + $("lvl1Pct").value + "% for " + $("lvl1Min").value + " min\n" +
         "  Level 2: " + $("lvl2Pct").value + "% for " + $("lvl2Min").value + " min\n" +
         "  Then OFF\n\n";
@@ -437,7 +432,7 @@
 
     const subject = encodeURIComponent("Lighting ROI Estimate - " + r.project);
 
-    // To customer, BCC you (customer will not see BCC on receipt; we do not mention it)
+    // To customer, BCC you (customer will not see BCC in received email)
     const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
 
     window.location.href =
@@ -448,7 +443,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function(){
-    // Use addEventListener to avoid CSP blocking inline handlers 
+    // addEventListener avoids inline handlers being blocked under strict CSP 
     $("controlsMode").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);
     $("btnEmail").addEventListener("click", emailCustomer);

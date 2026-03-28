@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AES Lighting ROI Calculator</title>
+<title>Lighting ROI Calculator</title>
 
 <style>
 body {
@@ -14,40 +14,15 @@ body {
 }
 
 .container {
-  max-width: 980px;
+  max-width: 900px;
   margin: auto;
   background: #fff;
   padding: 24px;
   border-radius: 10px;
 }
 
-.header {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.logo {
-  max-height: 64px;
-  max-width: 220px;
-  display: block;
-}
-
-.headerText h1 {
-  margin: 0;
-}
-
-.headerText .sub {
-  margin-top: 4px;
-  color: #555;
-  font-size: 12px;
-}
-
-.contactLine {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #222;
+h1 {
+  margin-top: 0;
 }
 
 label {
@@ -70,45 +45,12 @@ input {
   gap: 14px;
 }
 
-@media (max-width: 900px){
-  .grid { grid-template-columns: 1fr; }
-  .header { flex-direction: column; align-items: flex-start; }
-}
-
-.panel {
-  border: 1px solid #ddd;
-  background: #fafafa;
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 6px;
-  margin-bottom: 14px;
-}
-
-.toggleRow {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.toggleRow input {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-}
-
-.small {
-  font-size: 12px;
-  color: #555;
-  margin-top: 6px;
-}
-
 button {
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
   font-weight: bold;
   cursor: pointer;
-  margin-right: 8px;
 }
 
 .primary {
@@ -121,21 +63,10 @@ button {
   color: #0a5c7d;
 }
 
-.warn {
-  display: none;
-  margin-top: 12px;
-  color: #92400e;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 12px;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 th, td {
@@ -147,44 +78,14 @@ th, td {
 th {
   background: #f0f3f6;
 }
-
-.highlight {
-  font-weight: bold;
-  background: #f9fbfd;
-}
 </style>
 </head>
 
 <body>
 
 <div class="container">
+  <h1>Lighting ROI Calculator</h1>
 
-  <!-- Logo + header -->
-  <div class="header">
-    <img class="logo" src="aes-logo.png" alt="AES Logo">
-    <div class="headerText">
-      <h1>Lighting ROI Calculator</h1>
-      <div class="sub">Compare Fixtures Only vs Fixtures + Controls. Print or Email Results.</div>
-      <div class="contactLine">
-        <b>Jeffrey Mitchell</b> — <span id="titleDisplay">Sales Representative</span><br>
-        jmitchell@allelectricsales.com • 847 830 8447
-      </div>
-    </div>
-  </div>
-
-  <!-- Project + Prepared By -->
-  <div class="grid">
-    <div style="grid-column: span 2;">
-      <label>Project Name</label>
-      <input id="projectName" type="text" placeholder="e.g. ABC Warehouse Retrofit">
-    </div>
-    <div>
-      <label>Prepared By Title</label>
-      <input id="preparedTitle" type="text" value="Sales Representative" oninput="syncTitle()">
-    </div>
-  </div>
-
-  <!-- Inputs -->
   <div class="grid">
     <div>
       <label>Number of Fixtures</label>
@@ -200,7 +101,7 @@ th {
     </div>
 
     <div>
-      <label>Hours Per Day (Occupied)</label>
+      <label>Hours Per Day</label>
       <input id="hours" type="number" value="12">
     </div>
     <div>
@@ -209,288 +110,4 @@ th {
     </div>
     <div>
       <label>Electric Rate ($/kWh)</label>
-      <input id="rate" type="number" step="0.0001" value="0.1228">
-      <div class="small">Estimated Illinois Rate</div>
-    </div>
 
-    <div>
-      <label>Fixture Cost ($)</label>
-      <input id="fixtureCost" type="number" value="8500">
-    </div>
-    <div>
-      <label>Controls Cost ($)</label>
-      <input id="controlsCost" type="number" value="1000">
-    </div>
-    <div>
-      <label>Rebates ($)</label>
-      <input id="rebate" type="number" value="0">
-    </div>
-  </div>
-
-  <!-- Controls Toggle -->
-  <div class="panel">
-    <div class="toggleRow">
-      <input id="ctrlOn" type="checkbox" onchange="toggleControls()">
-      <label style="margin:0;">Add Network Lighting Controls (Enable Controls Math)</label>
-    </div>
-
-    <div id="controlsSection" style="display:none; margin-top:12px;">
-      <div class="grid">
-        <div>
-          <label>Dim Level 1 (% Output) (Starting Level)</label>
-          <input id="lvl1Pct" type="number" value="70">
-        </div>
-        <div>
-          <label>Time At Dim Level 1 (Minutes)</label>
-          <input id="lvl1Min" type="number" value="30">
-        </div>
-        <div>
-          <label>Dim Level 2 (% Output)</label>
-          <input id="lvl2Pct" type="number" value="30">
-        </div>
-        <div>
-          <label>Time At Dim Level 2 (Minutes)</label>
-          <input id="lvl2Min" type="number" value="30">
-        </div>
-        <div style="grid-column: span 3;">
-          <div class="small">
-            After Level 2 timeout, fixtures turn <b>OFF</b>. On motion, fixtures return to <b>Dim Level 1</b>.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Actions -->
-  <button class="primary" type="button" onclick="calculate()">Calculate</button>
-  <button class="secondary" type="button" onclick="emailResults()">Email Results</button>
-  <button class="secondary" type="button" onclick="window.print()">Print / Save as PDF</button>
-
-  <div class="warn" id="warn"></div>
-
-  <!-- Customer Email -->
-  <div class="grid" style="margin-top:14px;">
-    <div style="grid-column: span 3;">
-      <label>Customer Email (For Email Results)</label>
-      <input id="custEmail" type="email" placeholder="customer@company.com">
-    </div>
-  </div>
-
-  <!-- Results Table -->
-  <table>
-    <tr>
-      <th>Project</th>
-      <td colspan="2" id="tProject">—</td>
-    </tr>
-    <tr>
-      <th></th>
-      <th>Fixtures Only</th>
-      <th>Fixtures + Controls</th>
-    </tr>
-    <tr>
-      <td>Annual Savings</td>
-      <td id="sFixtures">—</td>
-      <td id="sControls">—</td>
-    </tr>
-    <tr>
-      <td>Net Project Cost</td>
-      <td id="cFixtures">—</td>
-      <td id="cControls">—</td>
-    </tr>
-    <tr class="highlight">
-      <td>Simple Payback</td>
-      <td id="pFixtures">—</td>
-      <td id="pControls">—</td>
-    </tr>
-    <tr>
-      <td>Incremental Controls Savings</td>
-      <td colspan="2" id="incControls">—</td>
-    </tr>
-  </table>
-
-  <div class="small" style="margin-top:12px;">
-    Notes: Results are estimates. Verify actual runtime, utility rates, and control settings for proposal use.
-  </div>
-</div>
-
-<script>
-function $(id){ return document.getElementById(id); }
-
-function syncTitle(){
-  $("titleDisplay").innerText = ($("preparedTitle").value || "").trim() || "Sales Representative";
-}
-
-function toggleControls(){
-  $("controlsSection").style.display = $("ctrlOn").checked ? "block" : "none";
-}
-
-function showWarn(msg){
-  $("warn").style.display = "block";
-  $("warn").innerText = msg;
-}
-
-function clearWarn(){
-  $("warn").style.display = "none";
-  $("warn").innerText = "";
-}
-
-function money(n){
-  return "$" + Math.round(n).toLocaleString();
-}
-
-function payback(cost, savings){
-  if(!(savings > 0) || !(cost > 0)) return "—";
-  return (cost / savings).toFixed(2) + " years";
-}
-
-function calculate(){
-  clearWarn();
-
-  const project = ($("projectName").value || "").trim() || "—";
-
-  const qty = Number($("qty").value);
-  const oldW = Number($("oldW").value);
-  const newW = Number($("newW").value);
-  const hrs = Number($("hours").value);
-  const days = Number($("days").value);
-  const rate = Number($("rate").value);
-
-  const fixtureCost = Number($("fixtureCost").value);
-  const controlsCost = Number($("controlsCost").value);
-  const rebate = Number($("rebate").value);
-
-  if(!(qty > 0) || isNaN(qty) || isNaN(oldW) || isNaN(newW) || isNaN(hrs) || isNaN(days) || isNaN(rate)){
-    showWarn("Please enter valid numbers.");
-    return null;
-  }
-  if(hrs < 0 || hrs > 24){
-    showWarn("Hours per day must be between 0 and 24.");
-    return null;
-  }
-
-  // Baseline energy (annual kWh)
-  const oldKwh = (qty * oldW * hrs * days) / 1000;
-  const ledKwh = (qty * newW * hrs * days) / 1000;
-
-  // Fixtures-only annual savings ($)
-  const annualFixtures = (oldKwh - ledKwh) * rate;
-
-  // Fixtures-only net cost
-  const netFixturesCost = Math.max(0, fixtureCost - rebate);
-
-  // Controls scenario defaults to fixtures-only unless enabled
-  let annualWithControls = annualFixtures;
-  let netControlsCost = netFixturesCost;
-
-  if($("ctrlOn").checked){
-    // Real dimming math (Level 1 is starting level, then Level 2, then OFF).
-    const l1Pct = Number($("lvl1Pct").value) / 100;
-    const l2Pct = Number($("lvl2Pct").value) / 100;
-    const l1Hrs = Number($("lvl1Min").value) / 60;
-    const l2Hrs = Number($("lvl2Min").value) / 60;
-
-    if(isNaN(l1Pct) || isNaN(l2Pct) || isNaN(l1Hrs) || isNaN(l2Hrs)){
-      showWarn("Please enter valid controls values.");
-      return null;
-    }
-    if((l1Hrs + l2Hrs) > hrs){
-      showWarn("Controls timing exceeds occupied hours.");
-      return null;
-    }
-
-    // LED controlled energy per day:
-    // During occupied time, fixture spends l1Hrs at Level1%, l2Hrs at Level2%, remainder OFF.
-    const dailyControlledKwh = (qty * newW * ((l1Hrs * l1Pct) + (l2Hrs * l2Pct))) / 1000;
-    const controlledKwh = dailyControlledKwh * days;
-
-    // Annual savings with controls
-    annualWithControls = (oldKwh - controlledKwh) * rate;
-
-    // Safety clamp (rounding)
-    if(annualWithControls < annualFixtures) annualWithControls = annualFixtures;
-
-    // Net cost with controls
-    netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
-  }
-
-  const incControls = annualWithControls - annualFixtures;
-
-  // Render
-  $("tProject").innerText = project;
-
-  $("sFixtures").innerText = money(annualFixtures) + " / year";
-  $("sControls").innerText = money(annualWithControls) + " / year";
-
-  $("cFixtures").innerText = money(netFixturesCost);
-  $("cControls").innerText = money(netControlsCost);
-
-  $("pFixtures").innerText = payback(netFixturesCost, annualFixtures);
-  $("pControls").innerText = payback(netControlsCost, annualWithControls);
-
-  $("incControls").innerText = money(incControls) + " / year";
-
-  // Keep title display in sync
-  syncTitle();
-
-  return {
-    project, annualFixtures, annualWithControls, netFixturesCost, netControlsCost, incControls
-  };
-}
-
-function emailResults(){
-  const email = ($("custEmail").value || "").trim();
-  if(!email){
-    showWarn("Enter a customer email to send results.");
-    return;
-  }
-
-  const r = calculate();
-  if(!r) return;
-
-  const subject = encodeURIComponent("Lighting ROI Estimate - " + r.project);
-
-  let body =
-"Lighting ROI Estimate\n\n" +
-"Project: " + r.project + "\n\n" +
-"Fixtures Only:\n" +
-"  Annual Savings: " + money(r.annualFixtures) + " / year\n" +
-"  Net Project Cost: " + money(r.netFixturesCost) + "\n" +
-"  Simple Payback: " + payback(r.netFixturesCost, r.annualFixtures) + "\n\n" +
-"Fixtures + Controls:\n" +
-"  Annual Savings: " + money(r.annualWithControls) + " / year\n" +
-"  Net Project Cost: " + money(r.netControlsCost) + "\n" +
-"  Simple Payback: " + payback(r.netControlsCost, r.annualWithControls) + "\n\n" +
-"Incremental Controls Savings: " + money(r.incControls) + " / year\n\n";
-
-  if($("ctrlOn").checked){
-    body +=
-"Controls Settings:\n" +
-"  Level 1: " + $("lvl1Pct").value + "% for " + $("lvl1Min").value + " min\n" +
-"  Level 2: " + $("lvl2Pct").value + "% for " + $("lvl2Min").value + " min\n" +
-"  Then Off\n\n";
-  }
-
-  body +=
-"Prepared By:\n" +
-"Jeffrey Mitchell\n" +
-($("preparedTitle").value || "Sales Representative") + "\n" +
-"All Electric Sales\n" +
-"jmitchell@allelectricsales.com\n" +
-"847 830 8447\n";
-
-  // Silent BCC to you (not shown on page)
-  const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
-
-  window.location.href =
-    "mailto:" + encodeURIComponent(email) +
-    "?bcc=" + bcc +
-    "&subject=" + subject +
-    "&body=" + encodeURIComponent(body);
-}
-
-// Initialize title display
-syncTitle();
-</script>
-
-</body>
-</html>

@@ -290,15 +290,68 @@
       window.location.href = "mailto:" + encodeURIComponent(email) +
         "?bcc=" + bcc + "&subject=" + subject + "&body=" + body;
     }
+function printResults(){
+  var r = calculate();
+  if(!r) return;
 
-    function printResults(){
-      if(calculate() === null) return;
+  var today = new Date().toLocaleDateString();
 
-      // Print only #printArea via @media print
-      var html = summaryText().split("\n").join("<br>");
-      $("printArea").innerHTML = "<h1>ROI Estimate</h1><div>" + html + "</div>";
-      window.print();
-    }
+  $("printArea").innerHTML = `
+    <div class="print-wrap">
+      <div class="print-header">
+        <div class="logo-block">
+          <img src="aes-logo.png" alt="All Electric Sales" class="print-logo">
+        </div>
+        <div class="header-text">
+          <h1>Lighting ROI Estimate</h1>
+          <div class="date">Prepared ${today}</div>
+        </div>
+      </div>
+
+      <table class="print-table">
+        <tr>
+          <th>Annual Fixture Savings</th>
+          <td>${$("fixtureSavings").textContent}</td>
+        </tr>
+        <tr>
+          <th>Annual Controls Savings</th>
+          <td>${$("controlSavings").textContent}</td>
+        </tr>
+        <tr>
+          <th>Total Annual Savings</th>
+          <td>${$("totalSavings").textContent}</td>
+        </tr>
+        <tr>
+          <th>Net Project Cost</th>
+          <td>${$("netCost").textContent}</td>
+        </tr>
+        <tr>
+          <th>Simple Payback</th>
+          <td>${$("payback").textContent}</td>
+        </tr>
+      </table>
+
+      <div class="print-contact">
+        <p><b>For pricing, quotes, or additional questions:</b></p>
+        <p>
+          Jeffrey Mitchell<br>
+          All Electric Sales<br>
+          <a href="mailto:jmitchell@allelectricsales.com">jmitchell@allelectricsales.com</a><br>
+          847‑830‑8447
+        </p>
+      </div>
+
+      <div class="print-footer">
+        <p>
+          This estimate is based on provided inputs and assumed operating conditions.
+          Actual savings may vary based on usage patterns, utility rates, and site conditions.
+        </p>
+      </div>
+    </div>
+  `;
+
+  window.print();
+}
 
     // Wire events
     $("controlsToggle").addEventListener("change", toggleControls);

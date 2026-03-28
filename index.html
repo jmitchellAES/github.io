@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lighting ROI Calculator</title>
+<meta http-equiv="cache-control" content="no-cache" />
+<meta http-equiv="expires" content="0" />
+<meta http-equiv="pragma" content="no-cache" />
 
 <style>
 body {
@@ -21,14 +24,15 @@ body {
   border-radius: 10px;
 }
 
-h1 {
-  margin-top: 0;
+h1 { margin-top: 0; }
+
+.build {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 10px;
 }
 
-label {
-  font-size: 13px;
-  font-weight: bold;
-}
+label { font-size: 13px; font-weight: bold; }
 
 input {
   width: 100%;
@@ -53,23 +57,8 @@ button {
   cursor: pointer;
 }
 
-.primary {
-  background: #0a5c7d;
-  color: #fff;
-}
-
-.secondary {
-  background: #e8eef3;
-  color: #0a5c7d;
-}
-
-.panel {
-  border: 1px solid #ddd;
-  background: #fafafa;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 14px;
-}
+.primary { background: #0a5c7d; color: #fff; }
+.secondary { background: #e8eef3; color: #0a5c7d; }
 
 table {
   width: 100%;
@@ -83,13 +72,17 @@ th, td {
   text-align: left;
 }
 
-th {
-  background: #f0f3f6;
-}
+th { background: #f0f3f6; }
 
-.small {
+.warn {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
   font-size: 12px;
-  color: #555;
+  display: none;
 }
 </style>
 </head>
@@ -97,14 +90,9 @@ th {
 <body>
 
 <div class="container">
-  <h1>Lighting ROI Calculator</h1>
+  <div class="build">Build ID: <b id="buildId">2026-03-28-A</b></div>
 
-  <div class="grid">
-    <div style="grid-column: span 3;">
-      <label>Project Name</label>
-      <input id="projectName" type="text">
-    </div>
-  </div>
+  <h1>Lighting ROI Calculator</h1>
 
   <div class="grid">
     <div>
@@ -147,9 +135,96 @@ th {
     </div>
   </div>
 
-  <div class="panel">
-    <label>
-      <input type="checkbox" id="useControls" onchange="toggleControls()"> Add Controls
-    </label>
+  <button class="primary" id="btnCalc" type="button">Calculate</button>
+  <button class="secondary" id="btnPrint" type="button">Print / Save as PDF</button>
 
+  <div class="warn" id="warn"></div>
 
+  <table>
+    <tr>
+      <th></th>
+      <th>Fixtures Only</th>
+      <th>Fixtures + Controls</th>
+    </tr>
+    <tr>
+      <td>Annual Savings</td>
+      <td id="sFixtures">—</td>
+      <td id="sControls">—</td>
+    </tr>
+    <tr>
+      <td>Net Project Cost</td>
+      <td id="cFixtures">—</td>
+      <td id="cControls">—</td>
+    </tr>
+    <tr>
+      <td>Simple Payback</td>
+      <td id="pFixtures">—</td>
+      <td id="pControls">—</td>
+    </tr>
+  </table>
+</div>
+
+<script>
+function money(n) { return "$" + Math.round(n).toLocaleString(); }
+
+function showWarn(msg){
+  const w = document.getElementById("warn");
+  w.style.display = "block";
+  w.textContent = msg;
+}
+
+function clearWarn(){
+  const w = document.getElementById("warn");
+  w.style.display = "none";
+  w.textContent = "";
+}
+
+function calculate() {
+  clearWarn();
+
+  const qty = Number(document.getElementById("qty").value);
+  const oldW = Number(document.getElementById("oldW").value);
+  const newW = Number(document.getElementById("newW").value);
+  const hrs = Number(document.getElementById("hours").value);
+  const days = Number(document.getElementById("days").value);
+  const rate = Number(document.getElementById("rate").value);
+
+  const fixtureCost = Number(document.getElementById("fixtureCost").value);
+  const controlsCost = Number(document.getElementById("controlsCost").value);
+  const rebate = Number(document.getElementById("rebate").value);
+
+  if(!(qty > 0) || [oldW,newW,hrs,days,rate,fixtureCost,controlsCost,rebate].some(x => Number.isNaN(x))){
+    showWarn("Please enter valid numbers.");
+    return;
+  }
+
+  const oldKwh = qty * oldW * hrs * days / 1000;
+  const newKwh = qty * newW * hrs * days / 1000;
+
+  const fixtureSavings = (oldKwh - newKwh) * rate;
+  const controlsSavings = fixtureSavings * 0.20; // unchanged baseline uplift
+
+  const netFixtureCost = Math.max(0, fixtureCost - rebate);
+  const netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
+
+  document.getElementById("sFixtures").innerText = money(fixtureSavings) + " / year";
+  document.getElementById("sControls").innerText = money(fixtureSavings + controlsSavings) + " / year";
+
+  document.getElementById("cFixtures").innerText = money(netFixtureCost);
+  document.getElementById("cControls").innerText = money(netControlsCost);
+
+  document.getElementById("pFixtures").innerText =
+    (netFixtureCost / fixtureSavings).toFixed(2) + " years";
+
+  document.getElementById("pControls").innerText =
+    (netControlsCost / (fixtureSavings + controlsSavings)).toFixed(2) + " years";
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("btnCalc").addEventListener("click", calculate);
+  document.getElementById("btnPrint").addEventListener("click", function(){ window.print(); });
+});
+</script>
+
+</body>
+</html>

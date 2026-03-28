@@ -1,193 +1,175 @@
-
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AES Lighting ROI Calculator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AES Lighting ROI Calculator</title>
 
-<style>
-:root {
-  --brand:#0a5c7d;
-  --bg:#f4f6f8;
-  --card:#ffffff;
-  --border:#d9dee3;
-  --muted:#6b7280;
-}
+  <style>
+    :root{
+      --brand:#0a5c7d;
+      --bg:#f4f6f8;
+      --card:#ffffff;
+      --border:#d9dee3;
+      --muted:#6b7280;
+      --soft:#f8fafc;
+    }
 
-body {
-  margin:0;
-  background:var(--bg);
-  font-family: Arial, sans-serif;
-  color:#111;
-}
+    body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:#111;}
+    .container{max-width:1040px;margin:26px auto;background:var(--card);border-radius:14px;padding:22px;box-shadow:0 8px 26px rgba(0,0,0,.08);}
+    h1{margin:0 0 6px;}
+    .sub{color:var(--muted);margin:0 0 18px;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}}
+    label{font-size:13px;font-weight:700;}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);margin-top:6px;}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+    button{padding:10px 16px;border-radius:10px;border:none;font-weight:800;cursor:pointer;}
+    .primary{background:var(--brand);color:#fff;}
+    .ghost{background:#e7eef3;color:var(--brand);}
+    .panel{margin-top:16px;border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--soft);}
+    .toggleLine{display:flex;gap:10px;align-items:center;}
+    .toggleLine input{width:18px;height:18px;margin:0;}
+    .controls{display:none;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;}
+    table{width:100%;border-collapse:collapse;margin-top:14px;}
+    th,td{border:1px solid var(--border);padding:12px;text-align:left;}
+    th{background:#f0f3f6;}
+    .highlight{background:#f9fbfd;font-weight:800;}
+    .warn{margin-top:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;padding:10px;border-radius:12px;display:none;font-size:12px;}
 
-.container {
-  max-width:1000px;
-  margin:30px auto;
-  background:var(--card);
-  border-radius:12px;
-  padding:24px;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
-}
+    /* ===== PRINT: hide everything except #printArea using visibility (reliable) ===== */
+    /* This approach is a known pattern for printing only one section. [1](https://stackoverflow.com/questions/468881/print-div-id-printarea-div-only)[2](https://www.w3tutorials.net/blog/print-div-id-printarea-div-only/)[3](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Printing) */
+    #printArea{
+      visibility:hidden;
+      position:absolute;
+      left:-9999px;
+      top:0;
+      width:0;height:0;
+      overflow:hidden;
+    }
 
-h1 {
-  margin-top:0;
-  margin-bottom:6px;
-}
-
-.sub {
-  color:var(--muted);
-  margin-bottom:20px;
-}
-
-.grid {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
-}
-
-label {
-  font-size:13px;
-  font-weight:bold;
-}
-
-input {
-  width:100%;
-  padding:10px;
-  border-radius:8px;
-  border:1px solid var(--border);
-  margin-top:4px;
-}
-
-.buttons {
-  margin-top:20px;
-  display:flex;
-  gap:12px;
-}
-
-button {
-  padding:12px 18px;
-  border-radius:10px;
-  border:none;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.primary {
-  background:var(--brand);
-  color:#fff;
-}
-
-.secondary {
-  background:#e7eef3;
-  color:var(--brand);
-}
-
-.results {
-  margin-top:28px;
-}
-
-.results h2 {
-  margin-bottom:10px;
-}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-}
-
-th, td {
-  border:1px solid var(--border);
-  padding:12px;
-  text-align:left;
-}
-
-th {
-  background:#f0f3f6;
-}
-
-.highlight {
-  font-weight:bold;
-  background:#f9fbfd;
-}
-
-/* PRINT */
-#printArea { display:none; }
-
-@media print {
-  body * { visibility:hidden; }
-  #printArea, #printArea * { visibility:visible; }
-
-  #printArea {
-    position:fixed;
-    top:0; left:0;
-    width:100%;
-    padding:28px;
-    background:#fff;
-  }
-
-  table { margin-top:16px; }
-}
-</style>
+    @media print{
+      body *{visibility:hidden;}
+      #printArea, #printArea *{visibility:visible;}
+      #printArea{
+        position:fixed;
+        left:0; top:0;
+        width:100%;
+        height:auto;
+        padding:26px;
+        background:#fff;
+        overflow:visible;
+      }
+      @page { margin: 18mm; }
+      .print-header{display:flex;align-items:center;gap:18px;border-bottom:2px solid var(--brand);padding-bottom:12px;margin-bottom:16px;}
+      .print-logo{max-height:70px;max-width:240px;object-fit:contain;}
+      .print-title{margin:0;font-size:22pt;}
+      .print-meta{font-size:10.5pt;color:#444;margin-top:4px;}
+      .print-table th{background:#f3f4f6;}
+      .print-contact{margin-top:18px;border-top:1px solid #ccc;padding-top:12px;font-size:11pt;}
+      .print-footer{margin-top:12px;color:#555;font-size:9.5pt;}
+    }
+  </style>
 </head>
 
 <body>
+  <div class="container">
+    <h1>AES Lighting ROI Calculator</h1>
+    <div class="sub">Compare fixtures-only vs fixtures + controls, and generate a branded PDF.</div>
 
-<div class="container">
-  <h1>AES Lighting ROI Calculator</h1>
-  <div class="sub">Estimate annual savings and compare fixtures‑only vs fixtures + controls.</div>
+    <div class="grid">
+      <div>
+        <label>Project Name</label>
+        <input id="projectName" type="text" placeholder="e.g., ABC Warehouse Retrofit">
+      </div>
+      <div>
+        <label>Customer Email</label>
+        <input id="custEmail" type="email" placeholder="customer@company.com">
+      </div>
+      <div>
+        <label>Electric Rate ($/kWh)</label>
+        <input id="rate" type="number" step="0.0001" value="0.1228">
+        <div class="hint">Estimated Illinois Rate</div>
+      </div>
 
-  <div class="grid">
-    <div>
-      <label>Number of Fixtures</label>
-      <input id="qty" type="number" value="50">
-    </div>
-    <div>
-      <label>Old Wattage (W)</label>
-      <input id="oldW" type="number" value="400">
-    </div>
-    <div>
-      <label>New Wattage (W)</label>
-      <input id="newW" type="number" value="150">
+      <div>
+        <label>Number Of Fixtures</label>
+        <input id="qty" type="number" value="50">
+      </div>
+      <div>
+        <label>Old Wattage (W)</label>
+        <input id="oldW" type="number" value="400">
+      </div>
+      <div>
+        <label>New Wattage (W)</label>
+        <input id="newW" type="number" value="150">
+      </div>
+
+      <div>
+        <label>Hours Per Day (Occupied)</label>
+        <input id="hours" type="number" value="12">
+      </div>
+      <div>
+        <label>Days Per Year</label>
+        <input id="days" type="number" value="365">
+      </div>
+      <div>
+        <label>Rebates / Incentives ($)</label>
+        <input id="rebate" type="number" value="0">
+      </div>
+
+      <div>
+        <label>Fixture Upgrade Cost ($)</label>
+        <input id="fixtureCost" type="number" value="8500">
+      </div>
+      <div>
+        <label>Controls Cost ($)</label>
+        <input id="controlsCost" type="number" value="1000">
+      </div>
+      <div></div>
     </div>
 
-    <div>
-      <label>Hours Per Day</label>
-      <input id="hours" type="number" value="12">
-    </div>
-    <div>
-      <label>Days Per Year</label>
-      <input id="days" type="number" value="365">
-    </div>
-    <div>
-      <label>Electric Rate ($/kWh)</label>
-      <input id="rate" type="number" step="0.0001" value="0.1228">
+    <div class="panel">
+      <div class="toggleLine">
+        <input id="controlsToggle" type="checkbox">
+        <div style="font-weight:800;">Include Network Lighting Controls (For “Fixtures + Controls” Column)</div>
+      </div>
+
+      <div id="controlsSection" class="controls">
+        <div class="grid">
+          <div>
+            <label>Dim Level 1 (% Output) (Starting Level)</label>
+            <input id="lvl1Pct" type="number" value="70">
+          </div>
+          <div>
+            <label>Time At Dim Level 1 (Minutes)</label>
+            <input id="lvl1Min" type="number" value="30">
+          </div>
+          <div>
+            <label>Dim Level 2 (% Output)</label>
+            <input id="lvl2Pct" type="number" value="30">
+          </div>
+          <div>
+            <label>Time At Dim Level 2 (Minutes)</label>
+            <input id="lvl2Min" type="number" value="30">
+          </div>
+          <div style="grid-column:1/-1;color:#555;font-size:12px;">
+            After Level 2 timeout, fixtures turn <b>OFF</b>. On motion, fixtures return to <b>Dim Level 1</b>.
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div>
-      <label>Fixture Cost ($)</label>
-      <input id="fixtureCost" type="number" value="8500">
+    <div class="row">
+      <button class="primary" type="button" id="btnCalc">Calculate</button>
+      <button class="ghost" type="button" id="btnEmail">Email Results</button>
+      <button class="ghost" type="button" id="btnPrint">Print / Save As PDF</button>
     </div>
-    <div>
-      <label>Controls Cost ($)</label>
-      <input id="controlsCost" type="number" value="1000">
-    </div>
-    <div>
-      <label>Rebates ($)</label>
-      <input id="rebate" type="number" value="0">
-    </div>
-  </div>
 
-  <div class="buttons">
-    <button class="primary" onclick="calculate()">Calculate</button>
-    <button class="secondary" onclick="printPDF()">Print / Save as PDF</button>
-  </div>
+    <div class="warn" id="warn"></div>
 
-  <div class="results">
-    <h2>Annual Savings Comparison</h2>
-
+    <h2 style="margin-top:22px;margin-bottom:8px;">Comparison</h2>
     <table>
       <tr>
         <th></th>
@@ -209,108 +191,251 @@ th {
         <td id="pFixtures">—</td>
         <td id="pControls">—</td>
       </tr>
+      <tr>
+        <td>Incremental Controls Savings</td>
+        <td colspan="2" id="incControls">—</td>
+      </tr>
     </table>
   </div>
-</div>
 
-<!-- PRINT CONTENT -->
-<div id="printArea">
-  <div style="display:flex;align-items:center;gap:20px;border-bottom:2px solid var(--brand);padding-bottom:12px;">
-    <img src="aes-logo.png" style="max-height:70px;">
-    <div>
-      <h2 style="margin:0;">Lighting ROI Estimate</h2>
-      <div class="sub">Prepared <span id="printDate"></span></div>
+  <!-- PRINT AREA (kept in DOM; hidden by default; visible in print via @media print) -->
+  <div id="printArea">
+    <div class="print-header">
+      aes-logo.png
+      <div style="flex:1">
+        <div class="print-title">Lighting ROI Estimate</div>
+        <div class="print-meta">
+          Project: <span id="pProject"></span><br>
+          Prepared: <span id="pDate"></span>
+        </div>
+      </div>
+    </div>
+
+    <table class="print-table">
+      <tr>
+        <th></th>
+        <th>Fixtures Only</th>
+        <th>Fixtures + Controls</th>
+      </tr>
+      <tr>
+        <td>Annual Savings</td>
+        <td id="psFixtures"></td>
+        <td id="psControls"></td>
+      </tr>
+      <tr>
+        <td>Net Project Cost</td>
+        <td id="pcFixtures"></td>
+        <td id="pcControls"></td>
+      </tr>
+      <tr>
+        <td>Simple Payback</td>
+        <td id="ppFixtures"></td>
+        <td id="ppControls"></td>
+      </tr>
+      <tr>
+        <td>Incremental Controls Savings</td>
+        <td colspan="2" id="pIncControls"></td>
+      </tr>
+    </table>
+
+    <div style="margin-top:14px;font-size:10.5pt;color:#444;">
+      Inputs: Qty <span id="pQty"></span>, Old <span id="pOldW"></span>W, New <span id="pNewW"></span>W, Hours/Day <span id="pHours"></span>, Days/Year <span id="pDays"></span>, Rate $<span id="pRate"></span>/kWh
+      <span id="pControlsInputs"></span>
+    </div>
+
+    <div class="print-contact">
+      <div><b>For pricing, quotes, or questions:</b></div>
+      <div>Jeffrey Mitchell</div>
+      <div>jmitchell@allelectricsales.com</div>
+      <div>847 830 8447</div>
+    </div>
+
+    <div class="print-footer">
+      This estimate is based on provided inputs and assumed operating conditions. Actual savings may vary based on usage patterns, utility rates, and site conditions.
     </div>
   </div>
 
-  <table>
-    <tr>
-      <th></th>
-      <th>Fixtures Only</th>
-      <th>Fixtures + Controls</th>
-    </tr>
-    <tr>
-      <td>Annual Savings</td>
-      <td id="psFixtures"></td>
-      <td id="psControls"></td>
-    </tr>
-    <tr>
-      <td>Net Project Cost</td>
-      <td id="pcFixtures"></td>
-      <td id="pcControls"></td>
-    </tr>
-    <tr>
-      <td>Simple Payback</td>
-      <td id="ppFixtures"></td>
-      <td id="ppControls"></td>
-    </tr>
-  </table>
+  <script>
+    function $(id){ return document.getElementById(id); }
+    function money(n){ return "$" + Math.round(n).toLocaleString(); }
+    function payback(cost, savings){
+      if(!(savings > 0) || !(cost > 0)) return "—";
+      var yrs = cost / savings;
+      var months = yrs * 12;
+      return (months < 12) ? (months.toFixed(1) + " months") : (yrs.toFixed(2) + " years");
+    }
+    function showWarn(msg){ $("warn").style.display="block"; $("warn").textContent=msg; }
+    function clearWarn(){ $("warn").style.display="none"; $("warn").textContent=""; }
 
-  <div style="margin-top:22px;">
-    <b>For pricing, quotes, or questions:</b><br>
-    Jeffrey Mitchell<br>
-    All Electric Sales<br>
-    jmitchell@allelectricsales.com<br>
-    847‑830‑8447
-  </div>
+    function toggleControls(){
+      $("controlsSection").style.display = $("controlsToggle").checked ? "block" : "none";
+    }
 
-  <div class="sub" style="margin-top:16px;">
-    This estimate is based on provided inputs and assumed operating conditions.
-    Actual savings may vary based on usage, utility rates, and site conditions.
-  </div>
-</div>
+    function calcValues(){
+      clearWarn();
 
-<script>
-function money(n){ return "$" + Math.round(n).toLocaleString(); }
+      var project = ($("projectName").value || "").trim();
+      if(!project) project = "—";
 
-function payback(cost, savings){
-  if(savings <= 0) return "—";
-  return (cost / savings).toFixed(2) + " years";
-}
+      var qty = Number($("qty").value);
+      var oldW = Number($("oldW").value);
+      var newW = Number($("newW").value);
+      var hrs = Number($("hours").value);
+      var days = Number($("days").value);
+      var rate = Number($("rate").value);
 
-function calculate(){
-  const qty = +qty.value;
-  const oldW = +oldW.value;
-  const newW = +newW.value;
-  const hrs = +hours.value;
-  const days = +days.value;
-  const rate = +rate.value;
+      var fixtureCost = Number($("fixtureCost").value);
+      var controlsCost = Number($("controlsCost").value);
+      var rebate = Number($("rebate").value);
 
-  const fixtureCost = +fixtureCost.value;
-  const controlsCost = +controlsCost.value;
-  const rebate = +rebate.value;
+      if(!(qty > 0) || isNaN(qty) || isNaN(oldW) || isNaN(newW) || isNaN(hrs) || isNaN(days) || isNaN(rate)){
+        showWarn("Please enter valid numbers.");
+        return null;
+      }
+      if(hrs < 0 || hrs > 24){ showWarn("Hours per day must be between 0 and 24."); return null; }
 
-  const oldKwh = qty * oldW * hrs * days / 1000;
-  const ledKwh = qty * newW * hrs * days / 1000;
+      // Baselines
+      var oldKwh = (qty * oldW * hrs * days) / 1000;
+      var ledKwh = (qty * newW * hrs * days) / 1000;
 
-  const fixtureSavings = (oldKwh - ledKwh) * rate;
-  const controlsSavings = fixtureSavings * 0.20; // conservative controls uplift
+      // Fixtures-only
+      var annualFixtures = (oldKwh - ledKwh) * rate;
+      var netFixturesCost = Math.max(0, fixtureCost - rebate);
 
-  const netFixtureCost = Math.max(0, fixtureCost - rebate);
-  const netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
+      // Fixtures + Controls (only if checkbox checked; otherwise equal fixtures-only)
+      var annualControls = annualFixtures;
+      var netControlsCost = Math.max(0, fixtureCost - rebate);
+      var controlsInputsText = "";
 
-  sFixtures.innerText = money(fixtureSavings) + " / year";
-  sControls.innerText = money(fixtureSavings + controlsSavings) + " / year";
+      if($("controlsToggle").checked){
+        var l1Pct = Number($("lvl1Pct").value) / 100;
+        var l2Pct = Number($("lvl2Pct").value) / 100;
+        var l1Hrs = Number($("lvl1Min").value) / 60;
+        var l2Hrs = Number($("lvl2Min").value) / 60;
 
-  cFixtures.innerText = money(netFixtureCost);
-  cControls.innerText = money(netControlsCost);
+        if((l1Hrs + l2Hrs) > hrs){
+          showWarn("Controls timing exceeds occupied hours.");
+          return null;
+        }
 
-  pFixtures.innerText = payback(netFixtureCost, fixtureSavings);
-  pControls.innerText = payback(netControlsCost, fixtureSavings + controlsSavings);
+        // Starting level is Level 1 (not 100%).
+        var dailyControlledKwh = (qty * newW * ((l1Hrs * l1Pct) + (l2Hrs * l2Pct))) / 1000;
+        var controlledKwh = dailyControlledKwh * days;
 
-  psFixtures.innerText = sFixtures.innerText;
-  psControls.innerText = sControls.innerText;
-  pcFixtures.innerText = cFixtures.innerText;
-  pcControls.innerText = cControls.innerText;
-  ppFixtures.innerText = pFixtures.innerText;
-  ppControls.innerText = pControls.innerText;
-}
+        annualControls = (oldKwh - controlledKwh) * rate;
+        if(annualControls < annualFixtures) {
+          // safety clamp if rounding creates weirdness
+          annualControls = annualFixtures;
+        }
 
-function printPDF(){
-  document.getElementById("printDate").innerText = new Date().toLocaleDateString();
-  window.print();
-}
-</script>
+        netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
 
+        controlsInputsText =
+          ", Controls: L1 " + Math.round(l1Pct*100) + "% for " + $("lvl1Min").value + " min; " +
+          "L2 " + Math.round(l2Pct*100) + "% for " + $("lvl2Min").value + " min; then Off";
+      }
+
+      var incControls = annualControls - annualFixtures;
+
+      return {
+        project: project,
+        qty: qty, oldW: oldW, newW: newW, hrs: hrs, days: days, rate: rate,
+        annualFixtures: annualFixtures,
+        annualControls: annualControls,
+        netFixturesCost: netFixturesCost,
+        netControlsCost: netControlsCost,
+        incControls: incControls,
+        controlsInputsText: controlsInputsText
+      };
+    }
+
+    function render(){
+      var v = calcValues();
+      if(!v) return;
+
+      $("sFixtures").textContent = money(v.annualFixtures) + " / year";
+      $("sControls").textContent = money(v.annualControls) + " / year";
+      $("cFixtures").textContent = money(v.netFixturesCost);
+      $("cControls").textContent = money(v.netControlsCost);
+      $("pFixtures").textContent = payback(v.netFixturesCost, v.annualFixtures);
+      $("pControls").textContent = payback(v.netControlsCost, v.annualControls);
+      $("incControls").textContent = money(v.incControls) + " / year";
+    }
+
+    function emailResults(){
+      var email = ($("custEmail").value || "").trim();
+      if(!email){ showWarn("Enter a customer email to send results."); return; }
+
+      var v = calcValues();
+      if(!v) return;
+
+      var subject = encodeURIComponent("Lighting ROI Estimate - " + v.project);
+
+      var body =
+        "Lighting ROI Estimate\n\n" +
+        "Project: " + v.project + "\n\n" +
+        "Fixtures Only:\n" +
+        "  Annual Savings: " + money(v.annualFixtures) + " / year\n" +
+        "  Net Project Cost: " + money(v.netFixturesCost) + "\n" +
+        "  Simple Payback: " + payback(v.netFixturesCost, v.annualFixtures) + "\n\n" +
+        "Fixtures + Controls:\n" +
+        "  Annual Savings: " + money(v.annualControls) + " / year\n" +
+        "  Net Project Cost: " + money(v.netControlsCost) + "\n" +
+        "  Simple Payback: " + payback(v.netControlsCost, v.annualControls) + "\n\n" +
+        "Incremental Controls Savings: " + money(v.incControls) + " / year\n\n" +
+        "Jeffrey Mitchell\nAll Electric Sales\njmitchell@allelectricsales.com\n847 830 8447\n";
+
+      var bcc = encodeURIComponent("jmitchell@allelectricsales.com");
+
+      window.location.href =
+        "mailto:" + encodeURIComponent(email) +
+        "?bcc=" + bcc +
+        "&subject=" + subject +
+        "&body=" + encodeURIComponent(body);
+    }
+
+    function printPDF(){
+      var v = calcValues();
+      if(!v) return;
+
+      $("pProject").textContent = v.project;
+      $("pDate").textContent = new Date().toLocaleDateString();
+
+      $("psFixtures").textContent = money(v.annualFixtures) + " / year";
+      $("psControls").textContent = money(v.annualControls) + " / year";
+      $("pcFixtures").textContent = money(v.netFixturesCost);
+      $("pcControls").textContent = money(v.netControlsCost);
+      $("ppFixtures").textContent = payback(v.netFixturesCost, v.annualFixtures);
+      $("ppControls").textContent = payback(v.netControlsCost, v.annualControls);
+      $("pIncControls").textContent = money(v.incControls) + " / year";
+
+      $("pQty").textContent = v.qty;
+      $("pOldW").textContent = v.oldW;
+      $("pNewW").textContent = v.newW;
+      $("pHours").textContent = v.hrs;
+      $("pDays").textContent = v.days;
+      $("pRate").textContent = v.rate.toFixed(4);
+
+      $("pControlsInputs").textContent = v.controlsInputsText;
+
+      // wait for logo load before printing (prevents missing logo)
+      var img = $("printLogo");
+      if(img && !img.complete){
+        img.onload = function(){ window.print(); };
+        img.onerror = function(){ window.print(); };
+      } else {
+        window.print();
+      }
+    }
+
+    // Wire events
+    $("controlsToggle").addEventListener("change", function(){ toggleControls(); });
+    $("btnCalc").addEventListener("click", render);
+    $("btnEmail").addEventListener("click", emailResults);
+    $("btnPrint").addEventListener("click", printPDF);
+
+    // Init
+    toggleControls();
+  </script>
 </body>
 </html>

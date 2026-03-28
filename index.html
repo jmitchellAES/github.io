@@ -1,116 +1,134 @@
+
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lighting ROI Calculator</title>
+<title>AES Lighting ROI Calculator</title>
 
 <style>
+:root {
+  --brand:#0a5c7d;
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --border:#d9dee3;
+  --muted:#6b7280;
+}
+
 body {
+  margin:0;
+  background:var(--bg);
   font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  margin: 0;
-  padding: 20px;
+  color:#111;
 }
 
 .container {
-  max-width: 900px;
-  margin: auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
+  max-width:1000px;
+  margin:30px auto;
+  background:var(--card);
+  border-radius:12px;
+  padding:24px;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
 
 h1 {
-  margin-top: 0;
+  margin-top:0;
+  margin-bottom:6px;
+}
+
+.sub {
+  color:var(--muted);
+  margin-bottom:20px;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
 }
 
 label {
-  font-size: 13px;
-  font-weight: bold;
+  font-size:13px;
+  font-weight:bold;
 }
 
 input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  margin-bottom: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  margin-top:4px;
 }
 
-.row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+.buttons {
+  margin-top:20px;
+  display:flex;
+  gap:12px;
 }
 
 button {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
+  padding:12px 18px;
+  border-radius:10px;
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
 }
 
 .primary {
-  background: #0a5c7d;
-  color: #fff;
+  background:var(--brand);
+  color:#fff;
 }
 
 .secondary {
-  background: #e8eef3;
-  color: #0a5c7d;
+  background:#e7eef3;
+  color:var(--brand);
 }
 
 .results {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  margin-top:28px;
 }
 
-.card {
-  background: #f8fafc;
-  padding: 14px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+.results h2 {
+  margin-bottom:10px;
 }
 
-.small {
-  font-size: 12px;
-  color: #555;
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
 }
 
-#printArea {
-  display: none;
+th, td {
+  border:1px solid var(--border);
+  padding:12px;
+  text-align:left;
 }
 
-/* PRINT ONLY */
+th {
+  background:#f0f3f6;
+}
+
+.highlight {
+  font-weight:bold;
+  background:#f9fbfd;
+}
+
+/* PRINT */
+#printArea { display:none; }
+
 @media print {
-  body * { visibility: hidden; }
-  #printArea, #printArea * { visibility: visible; }
+  body * { visibility:hidden; }
+  #printArea, #printArea * { visibility:visible; }
+
   #printArea {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 24px;
-    background: #fff;
+    position:fixed;
+    top:0; left:0;
+    width:100%;
+    padding:28px;
+    background:#fff;
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 16px;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: left;
-  }
-  th {
-    background: #f0f3f6;
-  }
+
+  table { margin-top:16px; }
 }
 </style>
 </head>
@@ -118,9 +136,10 @@ button {
 <body>
 
 <div class="container">
-  <h1>Lighting ROI Calculator</h1>
+  <h1>AES Lighting ROI Calculator</h1>
+  <div class="sub">Estimate annual savings and compare fixtures‑only vs fixtures + controls.</div>
 
-  <div class="row">
+  <div class="grid">
     <div>
       <label>Number of Fixtures</label>
       <input id="qty" type="number" value="50">
@@ -133,6 +152,7 @@ button {
       <label>New Wattage (W)</label>
       <input id="newW" type="number" value="150">
     </div>
+
     <div>
       <label>Hours Per Day</label>
       <input id="hours" type="number" value="12">
@@ -145,6 +165,7 @@ button {
       <label>Electric Rate ($/kWh)</label>
       <input id="rate" type="number" step="0.0001" value="0.1228">
     </div>
+
     <div>
       <label>Fixture Cost ($)</label>
       <input id="fixtureCost" type="number" value="8500">
@@ -159,34 +180,73 @@ button {
     </div>
   </div>
 
-  <button class="primary" onclick="calculate()">Calculate</button>
-  <button class="secondary" onclick="printPDF()">Print / Save as PDF</button>
+  <div class="buttons">
+    <button class="primary" onclick="calculate()">Calculate</button>
+    <button class="secondary" onclick="printPDF()">Print / Save as PDF</button>
+  </div>
 
   <div class="results">
-    <div class="card"><b>Annual Fixture Savings</b><div id="fixtureSavings">—</div></div>
-    <div class="card"><b>Total Annual Savings</b><div id="totalSavings">—</div></div>
-    <div class="card"><b>Payback</b><div id="payback">—</div></div>
+    <h2>Annual Savings Comparison</h2>
+
+    <table>
+      <tr>
+        <th></th>
+        <th>Fixtures Only</th>
+        <th>Fixtures + Controls</th>
+      </tr>
+      <tr>
+        <td>Annual Savings</td>
+        <td id="sFixtures">—</td>
+        <td id="sControls">—</td>
+      </tr>
+      <tr>
+        <td>Net Project Cost</td>
+        <td id="cFixtures">—</td>
+        <td id="cControls">—</td>
+      </tr>
+      <tr class="highlight">
+        <td>Simple Payback</td>
+        <td id="pFixtures">—</td>
+        <td id="pControls">—</td>
+      </tr>
+    </table>
   </div>
 </div>
 
 <!-- PRINT CONTENT -->
 <div id="printArea">
-  <div style="display:flex;align-items:center;gap:20px;border-bottom:2px solid #0a5c7d;padding-bottom:12px;">
-    <img id="logo" src="aes-logo.png" style="max-height:70px;">
+  <div style="display:flex;align-items:center;gap:20px;border-bottom:2px solid var(--brand);padding-bottom:12px;">
+    <img src="aes-logo.png" style="max-height:70px;">
     <div>
       <h2 style="margin:0;">Lighting ROI Estimate</h2>
-      <div class="small">Prepared <span id="printDate"></span></div>
+      <div class="sub">Prepared <span id="printDate"></span></div>
     </div>
   </div>
 
   <table>
-    <tr><th>Annual Fixture Savings</th><td id="pFixture"></td></tr>
-    <tr><th>Total Annual Savings</th><td id="pTotal"></td></tr>
-    <tr><th>Net Project Cost</th><td id="pNet"></td></tr>
-    <tr><th>Simple Payback</th><td id="pPayback"></td></tr>
+    <tr>
+      <th></th>
+      <th>Fixtures Only</th>
+      <th>Fixtures + Controls</th>
+    </tr>
+    <tr>
+      <td>Annual Savings</td>
+      <td id="psFixtures"></td>
+      <td id="psControls"></td>
+    </tr>
+    <tr>
+      <td>Net Project Cost</td>
+      <td id="pcFixtures"></td>
+      <td id="pcControls"></td>
+    </tr>
+    <tr>
+      <td>Simple Payback</td>
+      <td id="ppFixtures"></td>
+      <td id="ppControls"></td>
+    </tr>
   </table>
 
-  <div style="margin-top:20px;">
+  <div style="margin-top:22px;">
     <b>For pricing, quotes, or questions:</b><br>
     Jeffrey Mitchell<br>
     All Electric Sales<br>
@@ -194,13 +254,21 @@ button {
     847‑830‑8447
   </div>
 
-  <div class="small" style="margin-top:14px;">
-    This estimate is based on provided inputs and assumed operating conditions. Actual savings may vary.
+  <div class="sub" style="margin-top:16px;">
+    This estimate is based on provided inputs and assumed operating conditions.
+    Actual savings may vary based on usage, utility rates, and site conditions.
   </div>
 </div>
 
 <script>
-function calculate() {
+function money(n){ return "$" + Math.round(n).toLocaleString(); }
+
+function payback(cost, savings){
+  if(savings <= 0) return "—";
+  return (cost / savings).toFixed(2) + " years";
+}
+
+function calculate(){
   const qty = +qty.value;
   const oldW = +oldW.value;
   const newW = +newW.value;
@@ -208,31 +276,39 @@ function calculate() {
   const days = +days.value;
   const rate = +rate.value;
 
+  const fixtureCost = +fixtureCost.value;
+  const controlsCost = +controlsCost.value;
+  const rebate = +rebate.value;
+
   const oldKwh = qty * oldW * hrs * days / 1000;
-  const newKwh = qty * newW * hrs * days / 1000;
-  const savings = (oldKwh - newKwh) * rate;
+  const ledKwh = qty * newW * hrs * days / 1000;
 
-  const netCost = Math.max(0, +fixtureCost.value + +controlsCost.value - +rebate.value);
-  const payback = savings > 0 ? (netCost / savings).toFixed(2) + " years" : "—";
+  const fixtureSavings = (oldKwh - ledKwh) * rate;
+  const controlsSavings = fixtureSavings * 0.20; // conservative controls uplift
 
-  fixtureSavings.innerText = "$" + savings.toFixed(0) + " / year";
-  totalSavings.innerText = "$" + savings.toFixed(0) + " / year";
-  payback.innerText = payback;
+  const netFixtureCost = Math.max(0, fixtureCost - rebate);
+  const netControlsCost = Math.max(0, fixtureCost + controlsCost - rebate);
 
-  pFixture.innerText = fixtureSavings.innerText;
-  pTotal.innerText = totalSavings.innerText;
-  pNet.innerText = "$" + netCost.toFixed(0);
-  pPayback.innerText = payback;
+  sFixtures.innerText = money(fixtureSavings) + " / year";
+  sControls.innerText = money(fixtureSavings + controlsSavings) + " / year";
+
+  cFixtures.innerText = money(netFixtureCost);
+  cControls.innerText = money(netControlsCost);
+
+  pFixtures.innerText = payback(netFixtureCost, fixtureSavings);
+  pControls.innerText = payback(netControlsCost, fixtureSavings + controlsSavings);
+
+  psFixtures.innerText = sFixtures.innerText;
+  psControls.innerText = sControls.innerText;
+  pcFixtures.innerText = cFixtures.innerText;
+  pcControls.innerText = cControls.innerText;
+  ppFixtures.innerText = pFixtures.innerText;
+  ppControls.innerText = pControls.innerText;
 }
 
-function printPDF() {
+function printPDF(){
   document.getElementById("printDate").innerText = new Date().toLocaleDateString();
-  const img = document.getElementById("logo");
-  if (!img.complete) {
-    img.onload = () => window.print();
-  } else {
-    window.print();
-  }
+  window.print();
 }
 </script>
 

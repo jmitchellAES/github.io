@@ -396,6 +396,14 @@
     text:"#111827"
   };
 
+  function decodeHtmlEntities(str){
+    if(!str) return str;
+    const t = document.createElement('textarea');
+    t.innerHTML = str;
+    return t.value;
+  }
+
+
   // ---------- formatting ----------
   function parseLoose(v){
     if(v == null) return 0;
@@ -755,12 +763,12 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "letter" });
 
-    // --- FIX: force normal character spacing for ALL PDF text, scoped to PDF only ---
-    const __origText = doc.text.bind(doc);
-    doc.text = function(...args){
-      try{ if(doc.setCharSpace) doc.setCharSpace(0); }catch(e){}
-      return __origText(...args);
-    };
+  // FIX: lock character spacing for entire PDF lifecycle
+  const __origText = doc.text.bind(doc);
+  doc.text = function(...args){
+    try{ if(doc.setCharSpace) doc.setCharSpace(0); }catch(e){}
+    return __origText(...args);
+  };
 
     doc.setFont("times", "normal");
     doc.setFontSize(11);
@@ -838,20 +846,14 @@
       }
 
     section("Fixture Lines");
-
-    // IMPORTANT: ensure normal spacing
-    if (doc.setCharSpace) doc.setCharSpace(0);
-
-    r.rows.forEach(line => {
-      const ctrl = line.controls === "Yes" ? "Yes" : "No";
-      const text =
-    `${line.name}: ${line.qty} @ ${line.oldW}W → ${line.newW}W, ` +
-    `${line.hours} hrs/day, ${line.days} days/yr, Controls: ${ctrl}`;
-
-      const wrapped = doc.splitTextToSize(text, 180);
-      doc.text(wrapped, 14, y);
-      y += wrapped.length * 6;
-    });
+  r.rows.forEach(line => {
+    const ctrl = line.controls === "Yes" ? "Yes" : "No";
+    const raw = `${line.name}: ${line.qty} @ ${line.oldW}W -> ${line.newW}W, ${line.hours} hrs/day, ${line.days} days/yr, Controls: ${ctrl}`;
+    const clean = decodeHtmlEntities(raw);
+    const wrapped = doc.splitTextToSize(clean, 180);
+    doc.text(wrapped, 14, y);
+    y += wrapped.length * 6;
+  });
 
       section("Project Costs");
       row("Fixture Cost:", fmtMoney2(r.fixtureCost));

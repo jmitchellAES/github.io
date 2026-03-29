@@ -101,6 +101,9 @@
     padding: 14px;
     margin-bottom: 14px;
   }
+  .fixtures-panel{
+  margin-top: 24px;   /* space ABOVE Fixture Lines */
+}
   .toggleRow{
     display:flex;
     align-items:center;
@@ -113,6 +116,12 @@
     margin:0;
   }
   .small{ font-size: 12px; color: #555; margin-top: 6px; line-height:1.35; }
+  .rate-note{
+  font-size: 12px;
+  color: #555;
+  margin-top: -6px;   /* pulls it closer to the input */
+  margin-bottom: 18px; /* creates space before next section */
+}
   .row{
     display:flex;
     gap:10px;
@@ -216,14 +225,14 @@
     <div>
       <label>Electric Rate ($/kWh)</label>
       <input id="rate" class="rate4" type="text" value="0.1636" inputmode="decimal">
-      <div class="small">Average Illinois Electric Rate</div>
+      <div class="rate-note">Average Illinois Electric Rate</div>
     </div>
     <div></div>
     <div></div>
   </div>
 
   <!-- MULTI-FIXTURE TABLE (replaces single fixture inputs) -->
-  <div class="panel">
+    <div class="panel fixtures-panel">
     <label style="display:block;margin-bottom:6px;">Fixture Lines</label>
     <div class="small">Add one row per fixture type. The calculator sums all rows.</div>
 

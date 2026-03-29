@@ -48,17 +48,16 @@
   }
   .page-title{
     flex: 1 1 auto;
-    text-align: center;      /* centers within the row */
+    text-align: center;
     font-size: 32px;
     font-weight: 800;
-    color: var(--brand);     /* AES blue */
+    color: var(--brand);
     margin: 0;
     line-height: 1.1;
   }
-  /* Optional spacer helps keep true center even if logo width varies */
   .header-spacer{
     flex: 0 0 auto;
-    width: 240px; /* roughly max logo width */
+    width: 240px;
   }
   @media (max-width: 900px){
     .header{
@@ -66,7 +65,6 @@
       align-items: center;
       gap: 10px;
     }
-    .page-title{ text-align:center; }
     .header-spacer{ display:none; }
   }
 
@@ -168,7 +166,6 @@
 <body>
 <div class="container">
 
-  <!-- Header: logo left, title centered in same row -->
   <div class="header">
     <img class="logo" src="aes-logo.png" alt="AES logo">
     <h1 class="page-title">Lighting ROI Calculator</h1>
@@ -215,7 +212,6 @@
     </div>
   </div>
 
-  <!-- Costs + Rebates -->
   <div class="panel">
     <div class="grid">
       <div>
@@ -246,7 +242,6 @@
     </div>
   </div>
 
-  <!-- Controls checkbox -->
   <div class="panel">
     <div class="toggleRow">
       <input id="controlsEnabled" type="checkbox">
@@ -326,6 +321,8 @@
 <script>
 (function(){
   const $ = (id)=>document.getElementById(id);
+
+  const FOOTER_TEXT = "Jeffrey Mitchell • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447";
 
   function warn(msg){ $("warn").style.display="block"; $("warn").textContent = msg; }
   function clearWarn(){ $("warn").style.display="none"; $("warn").textContent = ""; }
@@ -512,19 +509,44 @@
     return { xs, ys };
   }
 
+  // White header (center title) + date only on right (no "Date:")
   function drawHeader(doc, logoDataUrl, dateStr){
     const pageW = doc.internal.pageSize.getWidth();
+
+    // header area
     doc.setFillColor(255,255,255);
-    doc.rect(0, 0, pageW, 18, "F");
-    doc.addImage(logoDataUrl, "PNG", 12, 4, 28, 10);
+    doc.rect(0, 0, pageW, 24, "F");
+
+    doc.addImage(logoDataUrl, "PNG", 12, 7, 26, 10);
+
     doc.setTextColor(0,0,0);
-    doc.setFontSize(13);
-    doc.text("AES Lighting ROI Report", 50, 12);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.text("AES Lighting ROI Report", pageW / 2, 15, { align: "center" });
+
+    // date only (lower aligned)
+    doc.setFont("times", "normal");
     doc.setFontSize(10);
-    doc.text("Date:", pageW - 38, 8);
-    doc.text(dateStr, pageW - 38, 14);
+    doc.text(dateStr, pageW - 12, 16, { align: "right" });
+
     doc.setDrawColor(220);
-    doc.line(12, 18, pageW - 12, 18);
+    doc.line(12, 24, pageW - 12, 24);
+  }
+
+  // Footer with contact + page numbers
+  function drawFooter(doc, pageNum, pageCount){
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    doc.setDrawColor(220);
+    doc.line(12, pageH - 14, pageW - 12, pageH - 14);
+
+    doc.setFont("times", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(70,70,70);
+
+    doc.text(FOOTER_TEXT, 12, pageH - 8);
+    doc.text(`Page ${pageNum} of ${pageCount}`, pageW - 12, pageH - 8, { align: "right" });
   }
 
   function generatePdfReport(){
@@ -538,6 +560,10 @@
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "letter" });
+
+    // Force Times New Roman throughout (jsPDF "times")
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
 
     const dateStr = fmtDate(new Date());
 
@@ -560,32 +586,50 @@
     logoImg.onload = async function(){
       const logoDataUrl = await imgToDataUrl(logoImg);
 
-      // Cover page
+      // =====================
+      // COVER PAGE (still gets header/footer later)
+      // =====================
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
-      const logoW = 60, logoH = 22;
-      doc.addImage(logoDataUrl, "PNG", (pageW-logoW)/2, (pageH/2)-45, logoW, logoH);
-      doc.setFontSize(18);
-      doc.text(r.project, pageW/2, (pageH/2)-12, { align:"center" });
-      doc.setFontSize(12);
-      doc.text(dateStr, pageW/2, (pageH/2)+2, { align:"center" });
 
+      const logoW = 70, logoH = 26;
+      doc.addImage(logoDataUrl, "PNG", (pageW-logoW)/2, (pageH/2)-40, logoW, logoH);
+
+      doc.setFont("times","bold");
+      doc.setFontSize(18);
+      doc.setTextColor(0,0,0);
+      doc.text(r.project, pageW/2, (pageH/2), { align:"center" });
+
+      doc.setFont("times","normal");
+      doc.setFontSize(12);
+      doc.text(dateStr, pageW/2, (pageH/2)+10, { align:"center" });
+
+      // =====================
+      // DATA PAGE
+      // =====================
       doc.addPage();
-      let y = 28;
+      let y = 36; // start lower for better spacing under header
 
       function section(title){
+        y += 4;
         doc.setFillColor(240, 243, 246);
-        doc.rect(12, y, 192, 7, "F");
+        doc.rect(12, y, 192, 8, "F");
+
+        doc.setFont("times","bold");
         doc.setFontSize(12);
         doc.setTextColor(0,0,0);
-        doc.text(title, 14, y+5);
-        y += 10;
+        doc.text(title, 14, y + 5.7);
+
+        y += 14;
+        doc.setFont("times","normal");
+        doc.setFontSize(11);
       }
       function row(label, value){
+        doc.setFont("times","normal");
         doc.setFontSize(11);
         doc.text(label, 14, y);
         doc.text(value, 120, y);
-        y += 6;
+        y += 6.5;
       }
 
       section("Fixtures");
@@ -619,13 +663,20 @@
         row("After Level 2:", "OFF");
       }
 
-      // kWh bar chart before ROI
-      if(y > 165){ doc.addPage(); y = 28; }
+      // =====================
+      // CHART PAGE
+      // =====================
+      doc.addPage();
+      y = 36;
+
+      // ---- Bar chart: kWh usage ----
       section("Annual kWh Usage (Existing vs Recommended)");
 
       const barCanvas = document.createElement("canvas");
-      barCanvas.width = 900; barCanvas.height = 420;
+      barCanvas.width = 900;
+      barCanvas.height = 520;   // taller
       const barCtx = barCanvas.getContext("2d");
+
       if(window._kwhChart){ window._kwhChart.destroy(); }
       window._kwhChart = new Chart(barCtx, {
         type:"bar",
@@ -640,24 +691,27 @@
         options:{
           responsive:false,
           animation:false,
-          plugins:{ legend:{ display:false } },
+          plugins:{
+            legend:{ display:false },
+            title:{ display:true, text:"Annual kWh Usage", font:{ size:14, weight:"bold" } }
+          },
           scales:{
-            x:{ title:{ display:true, text:"Fixture Set" } },
-            y:{ title:{ display:true, text:"kWh per year" } }
+            x:{ title:{ display:true, text:"Fixture Type", font:{ weight:"bold" } } },
+            y:{ title:{ display:true, text:"kWh per Year", font:{ weight:"bold" } } }
           }
         }
       });
 
-      await new Promise(res => setTimeout(res, 30));
-      doc.addImage(window._kwhChart.toBase64Image(), "PNG", 12, y, 192, 70);
-      y += 80;
+      await new Promise(res => setTimeout(res, 40));
+      doc.addImage(window._kwhChart.toBase64Image(), "PNG", 12, y, 192, 85);
+      y += 98;
 
-      // ROI chart
-      if(y > 165){ doc.addPage(); y = 28; }
+      // ---- ROI chart ----
       section("ROI Graph (0–5 Years)");
 
       const roiCanvas = document.createElement("canvas");
-      roiCanvas.width = 900; roiCanvas.height = 420;
+      roiCanvas.width = 900;
+      roiCanvas.height = 540; // taller
       const roiCtx = roiCanvas.getContext("2d");
 
       const s1 = buildRoiSeries(initialNoRebate, annualSavingsFinal);
@@ -676,27 +730,34 @@
         options:{
           responsive:false,
           animation:false,
-          plugins:{ legend:{ display:true } },
+          plugins:{
+            legend:{ display:true, labels:{ font:{ weight:"bold" } } },
+            title:{ display:true, text:"Return on Investment (0–5 Years)", font:{ size:14, weight:"bold" } }
+          },
           scales:{
-            x:{ title:{ display:true, text:"Years" }, min:0, max:5 },
-            y:{ title:{ display:true, text:"Cumulative Cash Flow ($)" } }
+            x:{ title:{ display:true, text:"Years", font:{ weight:"bold" } }, min:0, max:5 },
+            y:{ title:{ display:true, text:"Cumulative Cash Flow ($)", font:{ weight:"bold" } } }
           }
         }
       });
 
-      await new Promise(res => setTimeout(res, 30));
-      doc.addImage(window._roiChart.toBase64Image(), "PNG", 12, y, 192, 80);
+      await new Promise(res => setTimeout(res, 40));
+      doc.addImage(window._roiChart.toBase64Image(), "PNG", 12, y, 192, 95);
 
-      // White header on every page
+      // =====================
+      // Apply header + footer + page numbers on EVERY page
+      // =====================
       const pageCount = doc.internal.getNumberOfPages();
       for(let i=1; i<=pageCount; i++){
         doc.setPage(i);
         drawHeader(doc, logoDataUrl, dateStr);
+        drawFooter(doc, i, pageCount);
       }
 
       const safeName = (r.project || "Project")
-        .replace(/[^a-z0-9]+/gi,"_")
-        .replace(/^_+|_+$/g,"");
+        .replace(/[^a-z0-9]+/gi," ")
+        .replace(/\s+/g," ")
+        .trim();
       doc.save((safeName || "Project") + " AES ROI.pdf");
     };
 
@@ -716,3 +777,4 @@
 </script>
 </body>
 </html>
+``

@@ -134,11 +134,490 @@
     padding-top: 12px;
     line-height: 1.35;
   }
+</style>
+</head>
 
-  @media print{
-    body{ background:#fff; padding: 0; }
-    .container{ box-shadow:none; }
-    .no-print{ display:none !important; }
+<body>
+<div class="container">
+
+  <!-- Header: logo + title only -->
+  <div class="header">
+    <img class="logo" src="aes-logo.png" alt="AES logo">
+    <div>
+      <h1>Lighting ROI Calculator</h1>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div style="grid-column: span 2;">
+      <label>Project Name</label>
+      <input id="projectName" type="text" placeholder="e.g., ABC Warehouse Retrofit">
+    </div>
+    <div>
+      <label>Customer Email (To:)</label>
+      <input id="custEmail" type="email" placeholder="customer@company.com">
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <label>Number of Fixtures</label>
+      <input id="qty" type="number" value="50">
+    </div>
+    <div>
+      <label>Old Wattage (W)</label>
+      <input id="oldW" type="number" value="400">
+    </div>
+    <div>
+      <label>New Wattage (W)</label>
+      <input id="newW" type="number" value="150">
+    </div>
+
+    <div>
+      <label>Hours Per Day (Occupied)</label>
+      <input id="hours" type="number" value="12">
+    </div>
+    <div>
+      <label>Days Per Year</label>
+      <input id="days" type="number" value="365">
+    </div>
+    <div>
+      <label>Electric Rate ($/kWh)</label>
+      <input id="rate" type="number" step="0.0001" value="0.1228">
+      <div class="small">Estimated Illinois Rate</div>
+    </div>
+  </div>
+
+  <!-- Costs + Rebates -->
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label>Fixture Cost ($)</label>
+        <input id="fixtureCost" type="number" value="8500">
+      </div>
+      <div>
+        <label>Labor Cost ($)</label>
+        <input id="laborCost" type="number" value="0">
+      </div>
+      <div>
+        <label>Fixture Rebate ($)</label>
+        <input id="fixtureRebate" type="number" value="0">
+      </div>
+
+      <div>
+        <label>Controls Cost ($)</label>
+        <input id="controlsCost" type="number" value="1000">
+      </div>
+      <div>
+        <label>Controls Rebate ($)</label>
+        <input id="controlsRebate" type="number" value="0">
+      </div>
+      <div></div>
+    </div>
+    <div class="small">
+      Labor is included in both scenarios. Controls cost/rebate apply only when Controls are enabled.
+    </div>
+  </div>
+
+  <!-- Controls checkbox -->
+  <div class="panel">
+    <div class="toggleRow">
+      <input id="controlsEnabled" type="checkbox">
+      <label style="margin:0;">Add Controls (2‑Level Dim → Off)</label>
+    </div>
+
+    <div id="controlsFields" style="display:none;">
+      <div class="grid">
+        <div>
+          <label>Dim Level 1 (% Output) (Starting Level)</label>
+          <input id="lvl1Pct" type="number" value="70">
+        </div>
+        <div>
+          <label>Time at Level 1 (Minutes)</label>
+          <input id="lvl1Min" type="number" value="30">
+        </div>
+        <div>
+          <label>Dim Level 2 (% Output)</label>
+          <input id="lvl2Pct" type="number" value="30">
+        </div>
+        <div>
+          <label>Time at Level 2 (Minutes)</label>
+          <input id="lvl2Min" type="number" value="30">
+        </div>
+      </div>
+      <div class="small">
+        Model: On motion → Level 1. After Level 1 time → Level 2. After Level 2 time → OFF until motion again.
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="btnCalc" type="button">Calculate</button>
+    <button class="secondary" id="btnEmail" type="button">Email</button>
+  </div>
+
+  <div class="warn" id="warn"></div>
+
+  <table>
+    <tr>
+      <th>Project</th>
+      <td colspan="2" id="outProject">—</td>
+    </tr>
+    <tr>
+      <th></th>
+      <th>Fixtures Only</th>
+      <th>Fixtures + Controls</th>
+    </tr>
+    <tr>
+      <td>Annual kWh Saved</td>
+      <td id="kwhFix">—</td>
+      <td id="kwhCtrl">—</td>
+    </tr>
+    <tr>
+      <td>Annual Savings ($)</td>
+      <td id="sFix">—</td>
+      <td id="sCtrl">—</td>
+    </tr>
+    <tr>
+      <td>Total Project Cost (Net of Rebates)</td>
+      <td id="cFix">—</td>
+      <td id="cCtrl">—</td>
+    </tr>
+    <tr class="highlight">
+      <td>ROI (Simple Payback)</td>
+      <td id="pFix">—</td>
+      <td id="pCtrl">—</td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+
+  function warn(msg){
+    $("warn").style.display="block";
+    $("warn").textContent = msg;
+  }
+  function clearWarn(){
+    $("warn").style.display="none";
+    $("warn").textContent = "";
+  }
+  function money(n){
+    return "$" + Math.round(n).toLocaleString();
+  }
+  function num(n){
+    return Math.round(n).toLocaleString();
+  }
+  function payback(cost, savings){
+    if(!(savings > 0) || !(cost > 0)) return "—";
+    return (cost / savings).toFixed(2) + " years";
+  }
+
+  function toggleControlsUI(){
+    $("controlsFields").style.display = $("controlsEnabled").checked ? "block" : "none";
+  }
+
+  function calc(){
+    clearWarn();
+
+    const project = ($("projectName").value || "").trim() || "—";
+    const toEmail = ($("custEmail").value || "").trim();
+
+    const qty = Number($("qty").value);
+    const oldW = Number($("oldW").value);
+    const newW = Number($("newW").value);
+    const hrs = Number($("hours").value);
+    const days = Number($("days").value);
+    const rate = Number($("rate").value);
+
+    const fixtureCost = Number($("fixtureCost").value);
+    const laborCost = Number($("laborCost").value);
+    const fixtureRebate = Number($("fixtureRebate").value);
+
+    const controlsCost = Number($("controlsCost").value);
+    const controlsRebate = Number($("controlsRebate").value);
+
+    const inputs = [qty,oldW,newW,hrs,days,rate,fixtureCost,laborCost,fixtureRebate,controlsCost,controlsRebate];
+    if(!(qty > 0) || inputs.some(v=>Number.isNaN(v))){
+      warn("Please enter valid numbers.");
+      return null;
+    }
+    if(hrs < 0 || hrs > 24){
+      warn("Hours per day must be between 0 and 24.");
+      return null;
+    }
+
+    // Annual baseline energies (kWh)
+    const oldKwh = (qty * oldW * hrs * days) / 1000;
+    const ledKwh = (qty * newW * hrs * days) / 1000;
+
+    // Fixtures-only
+    const kwhSavedFix = oldKwh - ledKwh;
+    const annualFix = kwhSavedFix * rate;
+
+    // Net cost fixtures-only = fixture + labor - fixture rebate
+    const netFix = Math.max(0, fixtureCost + laborCost - fixtureRebate);
+
+    // Controls scenario defaults
+    let controlledKwhAnnual = ledKwh; // if controls off, same as LED
+    if($("controlsEnabled").checked){
+      const l1Pct = Number($("lvl1Pct").value) / 100;
+      const l2Pct = Number($("lvl2Pct").value) / 100;
+      const l1Hrs = Number($("lvl1Min").value) / 60;
+      const l2Hrs = Number($("lvl2Min").value) / 60;
+
+      if([l1Pct,l2Pct,l1Hrs,l2Hrs].some(v=>Number.isNaN(v))){
+        warn("Please enter valid controls values.");
+        return null;
+      }
+      if((l1Hrs + l2Hrs) > hrs){
+        warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours.");
+        return null;
+      }
+
+      // Real dimming math within occupied hours:
+      // Level 1 for l1Hrs, Level 2 for l2Hrs, OFF for remainder of occupied time.
+      const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
+      controlledKwhAnnual = dailyControlledKwh * days;
+    }
+
+    const kwhSavedCtrl = oldKwh - controlledKwhAnnual;
+    let annualCtrl = kwhSavedCtrl * rate;
+
+    // clamp so controls scenario can't be worse than fixtures-only due to rounding
+    if(annualCtrl < annualFix) annualCtrl = annualFix;
+
+    // Net cost with controls = fixture + controls + labor - fixture rebate - controls rebate
+    const netCtrl = Math.max(0, fixtureCost + laborCost + ( $("controlsEnabled").checked ? controlsCost : 0 )
+      - fixtureRebate - ( $("controlsEnabled").checked ? controlsRebate : 0 ));
+
+    // Render
+    $("outProject").textContent = project;
+
+    $("kwhFix").textContent = num(kwhSavedFix) + " kWh / year";
+    $("kwhCtrl").textContent = num(kwhSavedCtrl) + " kWh / year";
+
+    $("sFix").textContent = money(annualFix) + " / year";
+    $("sCtrl").textContent = money(annualCtrl) + " / year";
+
+    $("cFix").textContent = money(netFix);
+    $("cCtrl").textContent = money(netCtrl);
+
+    $("pFix").textContent = payback(netFix, annualFix);
+    $("pCtrl").textContent = payback(netCtrl, annualCtrl);
+
+    // Final values for email depend on checkbox
+    const finalKwhSaved = $("controlsEnabled").checked ? kwhSavedCtrl : kwhSavedFix;
+    const finalSavings = $("controlsEnabled").checked ? annualCtrl : annualFix;
+    const finalCost = $("controlsEnabled").checked ? netCtrl : netFix;
+    const finalROI = payback(finalCost, finalSavings);
+
+    return {
+      project, toEmail,
+      qty, oldW, newW,
+      finalKwhSaved, finalSavings, finalROI,
+      controlsEnabled: $("controlsEnabled").checked,
+      lvl1Pct: $("lvl1Pct").value, lvl1Min: $("lvl1Min").value,
+      lvl2Pct: $("lvl2Pct").value, lvl2Min: $("lvl2Min").value
+    };
+  }
+
+  function emailDraft(){
+    const r = calc();
+    if(!r) return;
+
+    const to = (r.toEmail || "").trim();
+    if(!to){
+      warn("Enter the customer email (To:).");
+      return;
+    }
+
+    const subject = encodeURIComponent("AES Lighting ROI Report");
+
+    let bodyText =
+      "Project Name: " + r.project + "\n\n" +
+      "Existing Fixtures: " + r.qty + " fixtures @ " + r.oldW + "W each\n" +
+      "Recommended Fixtures: " + r.qty + " fixtures @ " + r.newW + "W each\n\n" +
+      "Annual kWh Saved: " + Math.round(r.finalKwhSaved).toLocaleString() + " kWh / year\n" +
+      "Cost Savings (Annual): " + money(r.finalSavings) + " / year\n" +
+      "ROI (Simple Payback): " + r.finalROI + "\n\n";
+
+    if(r.controlsEnabled){
+      bodyText +=
+        "Controls Breakdown:\n" +
+        "  Level 1: " + r.lvl1Pct + "% for " + r.lvl1Min + " min\n" +
+        "  Level 2: " + r.lvl2Pct + "% for " + r.lvl2Min + " min\n" +
+        "  Then OFF\n\n";
+    } else {
+      bodyText += "Controls: None\n\n";
+    }
+
+    bodyText +=
+      "Prepared by AES (Jeff Mitchell)\n" +
+      "jmitchell@allelectricsales.com\n" +
+      "847 830 8447\n";
+
+    const body = encodeURIComponent(bodyText);
+
+    // BCC you (customer will not see it; not mentioned in body)
+    const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
+
+    window.location.href =
+      "mailto:" + encodeURIComponent(to) +
+      "?bcc=" + bcc +
+      "&subject=" + subject +
+      "&body=" + body;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    $("controlsEnabled").addEventListener("change", toggleControlsUI);
+    $("btnCalc").addEventListener("click", calc);
+    $("btnEmail").addEventListener("click", emailDraft);
+    toggleControlsUI();
+  });
+})();
+</script>
+</body>
+</html><!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lighting ROI Calculator</title>
+
+<meta http-equiv="cache-control" content="no-cache" />
+<meta http-equiv="expires" content="0" />
+<meta http-equiv="pragma" content="no-cache" />
+
+<style>
+  :root{
+    --brand:#0a5c7d;
+    --bg:#f4f6f8;
+    --card:#ffffff;
+    --border:#d9dee3;
+    --soft:#f8fafc;
+  }
+  body{
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 24px;
+    color:#111;
+  }
+  .container{
+    max-width: 1040px;
+    margin: auto;
+    background: var(--card);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.08);
+  }
+  .header{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    margin-bottom: 14px;
+  }
+  .logo{
+    max-height: 62px;
+    max-width: 240px;
+    display:block;
+  }
+  h1{ margin:0; }
+
+  label{ font-size:13px; font-weight:bold; }
+  input{
+    width:100%;
+    padding: 10px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background:#fff;
+    box-sizing: border-box;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 900px){
+    .grid{ grid-template-columns: 1fr; }
+    .header{ flex-direction: column; align-items:flex-start; }
+  }
+
+  .panel{
+    border: 1px solid var(--border);
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .toggleRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 6px;
+  }
+  .toggleRow input{
+    width:18px;
+    height:18px;
+    margin:0;
+  }
+  .small{ font-size: 12px; color: #555; margin-top: 6px; }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top: 6px;
+  }
+  button{
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .primary{ background: var(--brand); color:#fff; }
+  .secondary{ background:#e8eef3; color: var(--brand); }
+
+  .warn{
+    display:none;
+    margin-top:12px;
+    padding: 10px;
+    border-radius: 12px;
+    background:#fffbeb;
+    border:1px solid #fcd34d;
+    color:#92400e;
+    font-size:12px;
+  }
+
+  table{
+    width:100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+  }
+  th, td{
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align:left;
+  }
+  th{ background:#f0f3f6; }
+  .highlight{ font-weight:bold; background:#f9fbfd; }
+
+  .footer{
+    margin-top: 14px;
+    font-size: 12px;
+    color: #444;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    line-height: 1.35;
   }
 </style>
 </head>
@@ -192,18 +671,36 @@
       <input id="rate" type="number" step="0.0001" value="0.1228">
       <div class="small">Estimated Illinois Rate</div>
     </div>
+  </div>
 
-    <div>
-      <label>Fixture Cost ($)</label>
-      <input id="fixtureCost" type="number" value="8500">
+  <!-- Costs + Rebates -->
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label>Fixture Cost ($)</label>
+        <input id="fixtureCost" type="number" value="8500">
+      </div>
+      <div>
+        <label>Labor Cost ($)</label>
+        <input id="laborCost" type="number" value="0">
+      </div>
+      <div>
+        <label>Fixture Rebate ($)</label>
+        <input id="fixtureRebate" type="number" value="0">
+      </div>
+
+      <div>
+        <label>Controls Cost ($)</label>
+        <input id="controlsCost" type="number" value="1000">
+      </div>
+      <div>
+        <label>Controls Rebate ($)</label>
+        <input id="controlsRebate" type="number" value="0">
+      </div>
+      <div></div>
     </div>
-    <div>
-      <label>Controls Cost ($)</label>
-      <input id="controlsCost" type="number" value="1000">
-    </div>
-    <div>
-      <label>Rebates ($)</label>
-      <input id="rebate" type="number" value="0">
+    <div class="small">
+      Labor is included in both scenarios. Controls cost/rebate apply only when Controls are enabled.
     </div>
   </div>
 
@@ -239,11 +736,9 @@
     </div>
   </div>
 
-  <div class="row no-print">
+  <div class="row">
     <button class="primary" id="btnCalc" type="button">Calculate</button>
-    <!-- ✅ changed label -->
     <button class="secondary" id="btnEmail" type="button">Email</button>
-    <button class="secondary" id="btnPrint" type="button">Print / Save as PDF</button>
   </div>
 
   <div class="warn" id="warn"></div>
@@ -259,37 +754,35 @@
       <th>Fixtures + Controls</th>
     </tr>
     <tr>
-      <td>Annual Savings</td>
+      <td>Annual kWh Saved</td>
+      <td id="kwhFix">—</td>
+      <td id="kwhCtrl">—</td>
+    </tr>
+    <tr>
+      <td>Annual Savings ($)</td>
       <td id="sFix">—</td>
       <td id="sCtrl">—</td>
     </tr>
     <tr>
-      <td>Net Project Cost</td>
+      <td>Total Project Cost (Net of Rebates)</td>
       <td id="cFix">—</td>
       <td id="cCtrl">—</td>
     </tr>
     <tr class="highlight">
-      <td>Simple Payback</td>
+      <td>ROI (Simple Payback)</td>
       <td id="pFix">—</td>
       <td id="pCtrl">—</td>
-    </tr>
-    <tr>
-      <td>Incremental Controls Savings</td>
-      <td colspan="2" id="incCtrl">—</td>
     </tr>
   </table>
 
   <div class="footer">
-    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447<br>
-    Build ID: <b id="buildId"></b>
+    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447
   </div>
 </div>
 
 <script>
 (function(){
   const $ = (id)=>document.getElementById(id);
-
-  $("buildId").textContent = new Date().toISOString();
 
   function warn(msg){
     $("warn").style.display="block";
@@ -302,6 +795,9 @@
   function money(n){
     return "$" + Math.round(n).toLocaleString();
   }
+  function num(n){
+    return Math.round(n).toLocaleString();
+  }
   function payback(cost, savings){
     if(!(savings > 0) || !(cost > 0)) return "—";
     return (cost / savings).toFixed(2) + " years";
@@ -311,7 +807,6 @@
     $("controlsFields").style.display = $("controlsEnabled").checked ? "block" : "none";
   }
 
-  // Returns details needed for email body too
   function calc(){
     clearWarn();
 
@@ -326,10 +821,14 @@
     const rate = Number($("rate").value);
 
     const fixtureCost = Number($("fixtureCost").value);
-    const controlsCost = Number($("controlsCost").value);
-    const rebate = Number($("rebate").value);
+    const laborCost = Number($("laborCost").value);
+    const fixtureRebate = Number($("fixtureRebate").value);
 
-    if(!(qty > 0) || [oldW,newW,hrs,days,rate,fixtureCost,controlsCost,rebate].some(v=>Number.isNaN(v))){
+    const controlsCost = Number($("controlsCost").value);
+    const controlsRebate = Number($("controlsRebate").value);
+
+    const inputs = [qty,oldW,newW,hrs,days,rate,fixtureCost,laborCost,fixtureRebate,controlsCost,controlsRebate];
+    if(!(qty > 0) || inputs.some(v=>Number.isNaN(v))){
       warn("Please enter valid numbers.");
       return null;
     }
@@ -338,15 +837,19 @@
       return null;
     }
 
+    // Annual baseline energies (kWh)
     const oldKwh = (qty * oldW * hrs * days) / 1000;
     const ledKwh = (qty * newW * hrs * days) / 1000;
 
-    const annualFix = (oldKwh - ledKwh) * rate;
-    const netFix = Math.max(0, fixtureCost - rebate);
+    // Fixtures-only
+    const kwhSavedFix = oldKwh - ledKwh;
+    const annualFix = kwhSavedFix * rate;
 
-    let annualCtrl = annualFix;
-    let netCtrl = netFix;
+    // Net cost fixtures-only = fixture + labor - fixture rebate
+    const netFix = Math.max(0, fixtureCost + laborCost - fixtureRebate);
 
+    // Controls scenario defaults
+    let controlledKwhAnnual = ledKwh; // if controls off, same as LED
     if($("controlsEnabled").checked){
       const l1Pct = Number($("lvl1Pct").value) / 100;
       const l2Pct = Number($("lvl2Pct").value) / 100;
@@ -362,41 +865,54 @@
         return null;
       }
 
-      // Real dimming math: Level 1 then Level 2 then OFF (within occupied hours)
+      // Real dimming math within occupied hours:
+      // Level 1 for l1Hrs, Level 2 for l2Hrs, OFF for remainder of occupied time.
       const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
-      const controlledKwh = dailyControlledKwh * days;
-
-      annualCtrl = (oldKwh - controlledKwh) * rate;
-      if(annualCtrl < annualFix) annualCtrl = annualFix;
-
-      netCtrl = Math.max(0, fixtureCost + controlsCost - rebate);
+      controlledKwhAnnual = dailyControlledKwh * days;
     }
 
-    const inc = annualCtrl - annualFix;
+    const kwhSavedCtrl = oldKwh - controlledKwhAnnual;
+    let annualCtrl = kwhSavedCtrl * rate;
 
+    // clamp so controls scenario can't be worse than fixtures-only due to rounding
+    if(annualCtrl < annualFix) annualCtrl = annualFix;
+
+    // Net cost with controls = fixture + controls + labor - fixture rebate - controls rebate
+    const netCtrl = Math.max(0, fixtureCost + laborCost + ( $("controlsEnabled").checked ? controlsCost : 0 )
+      - fixtureRebate - ( $("controlsEnabled").checked ? controlsRebate : 0 ));
+
+    // Render
     $("outProject").textContent = project;
+
+    $("kwhFix").textContent = num(kwhSavedFix) + " kWh / year";
+    $("kwhCtrl").textContent = num(kwhSavedCtrl) + " kWh / year";
+
     $("sFix").textContent = money(annualFix) + " / year";
     $("sCtrl").textContent = money(annualCtrl) + " / year";
+
     $("cFix").textContent = money(netFix);
     $("cCtrl").textContent = money(netCtrl);
+
     $("pFix").textContent = payback(netFix, annualFix);
     $("pCtrl").textContent = payback(netCtrl, annualCtrl);
-    $("incCtrl").textContent = money(inc) + " / year";
 
-    // Final savings = controls scenario if enabled, else fixtures-only
-    const finalAnnualSavings = $("controlsEnabled").checked ? annualCtrl : annualFix;
+    // Final values for email depend on checkbox
+    const finalKwhSaved = $("controlsEnabled").checked ? kwhSavedCtrl : kwhSavedFix;
+    const finalSavings = $("controlsEnabled").checked ? annualCtrl : annualFix;
+    const finalCost = $("controlsEnabled").checked ? netCtrl : netFix;
+    const finalROI = payback(finalCost, finalSavings);
 
     return {
       project, toEmail,
       qty, oldW, newW,
-      annualFix, annualCtrl,
-      finalAnnualSavings
+      finalKwhSaved, finalSavings, finalROI,
+      controlsEnabled: $("controlsEnabled").checked,
+      lvl1Pct: $("lvl1Pct").value, lvl1Min: $("lvl1Min").value,
+      lvl2Pct: $("lvl2Pct").value, lvl2Min: $("lvl2Min").value
     };
   }
 
-  // Print first (Save as PDF), then open email draft.
-  // Note: browsers/mailto cannot attach files automatically. [1](https://stackoverflow.com/questions/5233556/using-mailto-to-send-email-with-an-attachment)
-  function emailCustomerPrintThenDraft(){
+  function emailDraft(){
     const r = calc();
     if(!r) return;
 
@@ -406,44 +922,50 @@
       return;
     }
 
-    window.onafterprint = function(){
-      const subject = encodeURIComponent("AES Lighting ROI Report");
+    const subject = encodeURIComponent("AES Lighting ROI Report");
 
-      // ✅ New email body per your request:
-      // Project name, existing vs recommended fixtures, and final cost savings.
-      const bodyText =
-        "Please see attached ROI report preformed by AES. Contact Jeff Mitchell with any questions.\n\n" +
-        "Project Name: " + r.project + "\n\n" +
-        "Existing Fixtures: " + r.qty + " fixtures @ " + r.oldW + "W each\n" +
-        "Recommended Fixtures: " + r.qty + " fixtures @ " + r.newW + "W each\n\n" +
-        "Final Cost Savings (Annual): " + money(r.finalAnnualSavings) + " / year\n";
+    let bodyText =
+      "Project Name: " + r.project + "\n\n" +
+      "Existing Fixtures: " + r.qty + " fixtures @ " + r.oldW + "W each\n" +
+      "Recommended Fixtures: " + r.qty + " fixtures @ " + r.newW + "W each\n\n" +
+      "Annual kWh Saved: " + Math.round(r.finalKwhSaved).toLocaleString() + " kWh / year\n" +
+      "Cost Savings (Annual): " + money(r.finalSavings) + " / year\n" +
+      "ROI (Simple Payback): " + r.finalROI + "\n\n";
 
-      const body = encodeURIComponent(bodyText);
+    if(r.controlsEnabled){
+      bodyText +=
+        "Controls Breakdown:\n" +
+        "  Level 1: " + r.lvl1Pct + "% for " + r.lvl1Min + " min\n" +
+        "  Level 2: " + r.lvl2Pct + "% for " + r.lvl2Min + " min\n" +
+        "  Then OFF\n\n";
+    } else {
+      bodyText += "Controls: None\n\n";
+    }
 
-      const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
+    bodyText +=
+      "Prepared by AES (Jeff Mitchell)\n" +
+      "jmitchell@allelectricsales.com\n" +
+      "847 830 8447\n";
 
-      window.location.href =
-        "mailto:" + encodeURIComponent(to) +
-        "?bcc=" + bcc +
-        "&subject=" + subject +
-        "&body=" + body;
+    const body = encodeURIComponent(bodyText);
 
-      window.onafterprint = null;
-    };
+    // BCC you (customer will not see it; not mentioned in body)
+    const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
 
-    window.print();
+    window.location.href =
+      "mailto:" + encodeURIComponent(to) +
+      "?bcc=" + bcc +
+      "&subject=" + subject +
+      "&body=" + body;
   }
 
   document.addEventListener("DOMContentLoaded", function(){
     $("controlsEnabled").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);
-    $("btnPrint").addEventListener("click", function(){ window.print(); });
-    $("btnEmail").addEventListener("click", emailCustomerPrintThenDraft);
-
+    $("btnEmail").addEventListener("click", emailDraft);
     toggleControlsUI();
   });
 })();
 </script>
 </body>
 </html>
-

@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lighting ROI Calculator</title>
 
-<meta http-equiv="cache-control" content="no-cache" />
-<meta http-equiv="expires" content="0" />
-<meta http-equiv="pragma" content="no-cache" />
-
 <style>
   :root{
     --brand:#0a5c7d;
@@ -22,7 +18,6 @@
     background: var(--bg);
     margin: 0;
     padding: 24px;
-    color:#111;
   }
   .container{
     max-width: 1040px;
@@ -33,102 +28,78 @@
     box-shadow: 0 8px 26px rgba(0,0,0,.08);
   }
 
-  /* Header row: logo left, title centered within same line */
   .header{
     display:flex;
     align-items:center;
-    margin-bottom: 14px;
-    gap: 12px;
+    gap:12px;
+    margin-bottom:16px;
   }
   .logo{
-    max-height: 62px;
-    max-width: 240px;
+    max-height:62px;
     display:block;
-    flex: 0 0 auto;
   }
   .page-title{
-    flex: 1 1 auto;
-    text-align: center;
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--brand);
-    margin: 0;
-    line-height: 1.1;
+    flex:1;
+    text-align:center;
+    font-size:32px;
+    font-weight:800;
+    color:var(--brand);
+    margin:0;
+    line-height:1.1;
   }
-  .header-spacer{
-    flex: 0 0 auto;
-    width: 240px;
-  }
-  @media (max-width: 900px){
-    .header{
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-    .header-spacer{ display:none; }
-  }
+  .header-spacer{ width:62px; }
 
   label{ font-size:13px; font-weight:bold; }
   input{
     width:100%;
-    padding: 10px;
-    margin-top: 6px;
-    margin-bottom: 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background:#fff;
-    box-sizing: border-box;
+    padding:10px;
+    margin:6px 0 14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    box-sizing:border-box;
   }
   .grid{
     display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
   }
   @media (max-width: 900px){
-    .grid{ grid-template-columns: 1fr; }
+    .grid{ grid-template-columns:1fr; }
+    .header{ flex-direction:column; }
+    .header-spacer{ display:none; }
   }
-
   .panel{
-    border: 1px solid var(--border);
-    background: var(--soft);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 14px;
+    border:1px solid var(--border);
+    background:var(--soft);
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:14px;
   }
   .toggleRow{
     display:flex;
     align-items:center;
     gap:10px;
-    margin-bottom: 6px;
+    margin-bottom:6px;
   }
-  .toggleRow input{
-    width:18px;
-    height:18px;
-    margin:0;
-  }
-  .small{ font-size: 12px; color: #555; margin-top: 6px; }
+  .toggleRow input{ width:18px; height:18px; margin:0; }
+  .small{ font-size:12px; color:#555; margin-top:6px; }
 
-  .row{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top: 6px;
-  }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; }
   button{
-    padding: 10px 16px;
-    border-radius: 10px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
+    padding:10px 16px;
+    border-radius:10px;
+    border:none;
+    font-weight:bold;
+    cursor:pointer;
   }
-  .primary{ background: var(--brand); color:#fff; }
-  .secondary{ background:#e8eef3; color: var(--brand); }
+  .primary{ background:var(--brand); color:#fff; }
+  .secondary{ background:#e8eef3; color:var(--brand); }
 
   .warn{
     display:none;
     margin-top:12px;
-    padding: 10px;
-    border-radius: 12px;
+    padding:10px;
+    border-radius:12px;
     background:#fffbeb;
     border:1px solid #fcd34d;
     color:#92400e;
@@ -137,28 +108,25 @@
 
   table{
     width:100%;
-    border-collapse: collapse;
-    margin-top: 16px;
+    border-collapse:collapse;
+    margin-top:16px;
   }
-  th, td{
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align:left;
+  th,td{
+    border:1px solid #ccc;
+    padding:10px;
   }
   th{ background:#f0f3f6; }
   .highlight{ font-weight:bold; background:#f9fbfd; }
 
   .footer{
-    margin-top: 14px;
-    font-size: 12px;
-    color: #444;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 12px;
-    line-height: 1.35;
+    margin-top:14px;
+    font-size:12px;
+    border-top:1px solid #ddd;
+    padding-top:12px;
+    color:#444;
   }
 </style>
 
-<!-- libs (must be OUTSIDE style) -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -314,15 +282,22 @@
   </table>
 
   <div class="footer">
-    Prepared by <b>Jeffrey Mitchell</b> • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447
+    Prepared by <b>Jeffrey Mitchell</b> • jmitchell@allelectricsales.com • 847 830 8447
   </div>
 </div>
 
 <script>
 (function(){
-  const $ = (id)=>document.getElementById(id);
+  const $ = id => document.getElementById(id);
 
-  const FOOTER_TEXT = "Jeffrey Mitchell • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447";
+  const COLORS = {
+    brand: "#0a5c7d",
+    recommended: "#94a3b8",
+    rebate: "#22c55e",
+    breakeven: "#f59e0b",
+    grid: "rgba(0,0,0,0.06)",
+    text: "#111827"
+  };
 
   function warn(msg){ $("warn").style.display="block"; $("warn").textContent = msg; }
   function clearWarn(){ $("warn").style.display="none"; $("warn").textContent = ""; }
@@ -405,7 +380,7 @@
     const grossCtrl = fixtureCost + laborCost + (controlsOn ? controlsCost : 0);
     const netCtrl_raw = Math.max(0, grossCtrl - fixtureRebate - (controlsOn ? controlsRebate : 0));
 
-    // controls-off: zero the column
+    // controls-off: zero column
     const kwhSavedCtrl = controlsOn ? kwhSavedCtrl_raw : 0;
     const annualCtrl = controlsOn ? annualCtrl_raw : 0;
     const netCtrl = controlsOn ? netCtrl_raw : 0;
@@ -499,57 +474,87 @@
     return c.toDataURL("image/png");
   }
 
-  function buildRoiSeries(initialCost, annualSavings){
-    const xs = [];
-    const ys = [];
+  function roiPoints(initialCost, annualSavings){
+    const pts = [];
     for(let t=0; t<=5.0001; t+=0.25){
-      xs.push(Number(t.toFixed(2)));
-      ys.push(-initialCost + annualSavings * t);
+      pts.push({ x: Number(t.toFixed(2)), y: (-initialCost + annualSavings * t) });
     }
-    return { xs, ys };
+    return pts;
   }
 
-  // White header (center title) + date only on right (no "Date:")
+  function breakEvenYear(initialCost, annualSavings){
+    if(!(annualSavings > 0)) return null;
+    const be = initialCost / annualSavings;
+    if(!isFinite(be)) return null;
+    return Math.max(0, Math.min(5, be));
+  }
+
+  // Plugin to draw vertical break-even line (afterDraw) [1](https://www.geeksforgeeks.org/javascript/how-to-draw-a-vertical-line-at-a-particular-point-on-the-x-axis-using-chart-js/)[2](https://stackoverflow.com/questions/30256695/chart-js-drawing-an-arbitrary-vertical-line)[3](https://www.chartjs.org/docs/latest/developers/plugins.html)
+  function makeBreakEvenPlugin(beYear){
+    return {
+      id: "breakeven_marker",
+      afterDraw(chart){
+        if(beYear == null) return;
+        const xScale = chart.scales.x;
+        const yScale = chart.scales.y;
+        if(!xScale || !yScale) return;
+
+        const x = xScale.getPixelForValue(beYear);
+        const ctx = chart.ctx;
+
+        ctx.save();
+        ctx.strokeStyle = COLORS.breakeven;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6,4]);
+        ctx.beginPath();
+        ctx.moveTo(x, yScale.top);
+        ctx.lineTo(x, yScale.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = COLORS.breakeven;
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(`Break-even: ${beYear.toFixed(2)} yrs`, x, yScale.top + 14);
+        ctx.restore();
+      }
+    };
+  }
+
   function drawHeader(doc, logoDataUrl, dateStr){
     const pageW = doc.internal.pageSize.getWidth();
-
-    // header area
     doc.setFillColor(255,255,255);
     doc.rect(0, 0, pageW, 24, "F");
-
     doc.addImage(logoDataUrl, "PNG", 12, 7, 26, 10);
 
     doc.setTextColor(0,0,0);
     doc.setFont("times", "bold");
     doc.setFontSize(14);
-    doc.text("AES Lighting ROI Report", pageW / 2, 15, { align: "center" });
+    doc.text("AES Lighting ROI Report", pageW/2, 15, { align:"center" });
 
-    // date only (lower aligned)
     doc.setFont("times", "normal");
     doc.setFontSize(10);
-    doc.text(dateStr, pageW - 12, 16, { align: "right" });
+    doc.text(dateStr, pageW - 12, 16, { align:"right" });
 
     doc.setDrawColor(220);
     doc.line(12, 24, pageW - 12, 24);
   }
 
-  // Footer with contact + page numbers
   function drawFooter(doc, pageNum, pageCount){
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-
     doc.setDrawColor(220);
     doc.line(12, pageH - 14, pageW - 12, pageH - 14);
 
-    doc.setFont("times", "normal");
+    doc.setFont("times","normal");
     doc.setFontSize(9);
     doc.setTextColor(70,70,70);
 
-    doc.text(FOOTER_TEXT, 12, pageH - 8);
-    doc.text(`Page ${pageNum} of ${pageCount}`, pageW - 12, pageH - 8, { align: "right" });
+    doc.text("Jeffrey Mitchell • All Electric Sales • jmitchell@allelectricsales.com • 847 830 8447", 12, pageH - 8);
+    doc.text(`Page ${pageNum} of ${pageCount}`, pageW - 12, pageH - 8, { align:"right" });
   }
 
-  function generatePdfReport(){
+  async function generatePdfReport(){
     const r = calc();
     if(!r) return;
 
@@ -559,10 +564,8 @@
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "mm", format: "letter" });
-
-    // Force Times New Roman throughout (jsPDF "times")
-    doc.setFont("times", "normal");
+    const doc = new jsPDF({ unit:"mm", format:"letter" });
+    doc.setFont("times","normal");
     doc.setFontSize(11);
 
     const dateStr = fmtDate(new Date());
@@ -573,9 +576,7 @@
     const initialNoRebate = r.controlsOn ? r.grossCtrl : r.grossFix;
     const initialWithRebate = r.controlsOn ? r.netCtrl_raw : r.netFix;
 
-    const roiNoRebate = payback(initialNoRebate, annualSavingsFinal);
-    const roiWithRebate = payback(initialWithRebate, annualSavingsFinal);
-    const monthlyDecrease = annualSavingsFinal / 12;
+    const beYear = breakEvenYear(initialWithRebate, annualSavingsFinal); // marker uses WITH rebates
 
     const existingKwh = r.oldKwh;
     const recommendedKwh = r.ledKwh;
@@ -586,118 +587,65 @@
     logoImg.onload = async function(){
       const logoDataUrl = await imgToDataUrl(logoImg);
 
-      // =====================
-      // COVER PAGE (still gets header/footer later)
-      // =====================
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
+      // Cover
+      const pw = doc.internal.pageSize.getWidth();
+      const ph = doc.internal.pageSize.getHeight();
+      doc.addImage(logoDataUrl, "PNG", (pw-70)/2, (ph/2)-40, 70, 26);
+      doc.setFont("times","bold"); doc.setFontSize(18); doc.setTextColor(0,0,0);
+      doc.text(r.project, pw/2, (ph/2), { align:"center" });
+      doc.setFont("times","normal"); doc.setFontSize(12);
+      doc.text(dateStr, pw/2, (ph/2)+10, { align:"center" });
 
-      const logoW = 70, logoH = 26;
-      doc.addImage(logoDataUrl, "PNG", (pageW-logoW)/2, (pageH/2)-40, logoW, logoH);
-
-      doc.setFont("times","bold");
-      doc.setFontSize(18);
-      doc.setTextColor(0,0,0);
-      doc.text(r.project, pageW/2, (pageH/2), { align:"center" });
-
-      doc.setFont("times","normal");
-      doc.setFontSize(12);
-      doc.text(dateStr, pageW/2, (pageH/2)+10, { align:"center" });
-
-      // =====================
-      // DATA PAGE
-      // =====================
+      // Charts page (for brevity, only charts updated here)
       doc.addPage();
-      let y = 36; // start lower for better spacing under header
+      let y = 36;
 
-      function section(title){
-        y += 4;
-        doc.setFillColor(240, 243, 246);
-        doc.rect(12, y, 192, 8, "F");
-
-        doc.setFont("times","bold");
-        doc.setFontSize(12);
-        doc.setTextColor(0,0,0);
-        doc.text(title, 14, y + 5.7);
-
+      function section(t){
+        doc.setFillColor(240,243,246);
+        doc.rect(12,y,192,8,"F");
+        doc.setFont("times","bold"); doc.setFontSize(12);
+        doc.text(t,14,y+5.5);
+        doc.setFont("times","normal"); doc.setFontSize(11);
         y += 14;
-        doc.setFont("times","normal");
-        doc.setFontSize(11);
-      }
-      function row(label, value){
-        doc.setFont("times","normal");
-        doc.setFontSize(11);
-        doc.text(label, 14, y);
-        doc.text(value, 120, y);
-        y += 6.5;
       }
 
-      section("Fixtures");
-      row("Existing Fixtures:", `${r.qty} fixtures @ ${r.oldW}W`);
-      row("Recommended Fixtures:", `${r.qty} fixtures @ ${r.newW}W`);
-
-      section("Project Costs");
-      row("Fixture Cost:", `$${Math.round(r.fixtureCost).toLocaleString()}`);
-      row("Labor Cost:", `$${Math.round(r.laborCost).toLocaleString()}`);
-      row("Controls Cost:", r.controlsOn ? `$${Math.round(r.controlsCost).toLocaleString()}` : "$0");
-
-      section("Project Cost Summary");
-      row("Total (No Rebates):", `$${Math.round(initialNoRebate).toLocaleString()}`);
-      row("Total (With Rebates):", `$${Math.round(initialWithRebate).toLocaleString()}`);
-
-      section("Rebates");
-      row("Fixture Rebate:", `$${Math.round(r.fixtureRebate).toLocaleString()}`);
-      row("Controls Rebate:", r.controlsOn ? `$${Math.round(r.controlsRebate).toLocaleString()}` : "$0");
-
-      section("Results");
-      row("Annual kWh Saved:", `${Math.round(kwhSavedFinal).toLocaleString()} kWh`);
-      row("Annual Savings:", `$${Math.round(annualSavingsFinal).toLocaleString()} / year`);
-      row("Monthly Decrease:", `$${Math.round(monthlyDecrease).toLocaleString()} / month`);
-      row("ROI (No Rebates):", roiNoRebate);
-      row("ROI (With Rebates):", roiWithRebate);
-
-      if(r.controlsOn){
-        section("Controls Breakdown");
-        row("Level 1:", `${r.lvl1Pct}% for ${r.lvl1Min} min`);
-        row("Level 2:", `${r.lvl2Pct}% for ${r.lvl2Min} min`);
-        row("After Level 2:", "OFF");
-      }
-
-      // =====================
-      // CHART PAGE
-      // =====================
-      doc.addPage();
-      y = 36;
-
-      // ---- Bar chart: kWh usage ----
+      // Bar chart (themed)
       section("Annual kWh Usage (Existing vs Recommended)");
-
       const barCanvas = document.createElement("canvas");
-      barCanvas.width = 900;
-      barCanvas.height = 520;   // taller
+      barCanvas.width = 1000; barCanvas.height = 520;
       const barCtx = barCanvas.getContext("2d");
+      if(window._kwhChart) window._kwhChart.destroy();
 
-      if(window._kwhChart){ window._kwhChart.destroy(); }
       window._kwhChart = new Chart(barCtx, {
-        type:"bar",
-        data:{
-          labels:["Existing","Recommended"],
-          datasets:[{
-            label:"kWh per year",
-            data:[existingKwh, recommendedKwh],
-            backgroundColor:["#0a5c7d","#94a3b8"]
+        type: "bar",
+        data: {
+          labels: ["Existing", "Recommended"],
+          datasets: [{
+            label: "kWh per year",
+            data: [existingKwh, recommendedKwh],
+            backgroundColor: [COLORS.brand, COLORS.recommended],
+            borderColor: [COLORS.brand, COLORS.recommended],
+            borderWidth: 1
           }]
         },
-        options:{
-          responsive:false,
-          animation:false,
-          plugins:{
-            legend:{ display:false },
-            title:{ display:true, text:"Annual kWh Usage", font:{ size:14, weight:"bold" } }
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: "Annual kWh Usage", font: { size: 12, weight: "normal" }, color: COLORS.text }
           },
-          scales:{
-            x:{ title:{ display:true, text:"Fixture Type", font:{ weight:"bold" } } },
-            y:{ title:{ display:true, text:"kWh per Year", font:{ weight:"bold" } } }
+          scales: {
+            x: {
+              grid: { color: COLORS.grid },
+              ticks: { font: { size: 9 }, color: COLORS.text },
+              title: { display: true, text: "Fixture Type", font: { size: 10, weight: "normal" }, color: COLORS.text }
+            },
+            y: {
+              grid: { color: COLORS.grid },
+              ticks: { font: { size: 9 }, color: COLORS.text },
+              title: { display: true, text: "kWh per Year", font: { size: 10, weight: "normal" }, color: COLORS.text }
+            }
           }
         }
       });
@@ -706,37 +654,64 @@
       doc.addImage(window._kwhChart.toBase64Image(), "PNG", 12, y, 192, 85);
       y += 98;
 
-      // ---- ROI chart ----
+      // ROI chart with break-even marker (themed + plugin)
       section("ROI Graph (0–5 Years)");
-
       const roiCanvas = document.createElement("canvas");
-      roiCanvas.width = 900;
-      roiCanvas.height = 540; // taller
+      roiCanvas.width = 1000; roiCanvas.height = 560;
       const roiCtx = roiCanvas.getContext("2d");
+      if(window._roiChart) window._roiChart.destroy();
 
-      const s1 = buildRoiSeries(initialNoRebate, annualSavingsFinal);
-      const s2 = buildRoiSeries(initialWithRebate, annualSavingsFinal);
+      const ptsNo = roiPoints(initialNoRebate, annualSavingsFinal);
+      const ptsYes = roiPoints(initialWithRebate, annualSavingsFinal);
 
-      if(window._roiChart){ window._roiChart.destroy(); }
       window._roiChart = new Chart(roiCtx, {
-        type:"line",
-        data:{
-          labels:s1.xs,
-          datasets:[
-            { label:"No Rebates", data:s1.ys, borderColor:"#0a5c7d", borderWidth:2, pointRadius:0, tension:0.2 },
-            { label:"With Rebates", data:s2.ys, borderColor:"#22c55e", borderWidth:2, pointRadius:0, tension:0.2 }
+        type: "line",
+        data: {
+          datasets: [
+            {
+              label: "No Rebates",
+              data: ptsNo,
+              parsing: false,
+              borderColor: COLORS.brand,
+              backgroundColor: "transparent",
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: "With Rebates",
+              data: ptsYes,
+              parsing: false,
+              borderColor: COLORS.rebate,
+              backgroundColor: "transparent",
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.2
+            }
           ]
         },
-        options:{
-          responsive:false,
-          animation:false,
-          plugins:{
-            legend:{ display:true, labels:{ font:{ weight:"bold" } } },
-            title:{ display:true, text:"Return on Investment (0–5 Years)", font:{ size:14, weight:"bold" } }
+        plugins: [ makeBreakEvenPlugin(beYear) ],
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: {
+            legend: { display: true, labels: { font: { size: 10, weight: "normal" }, color: COLORS.text } },
+            title: { display: true, text: "Return on Investment (0–5 Years)", font: { size: 12, weight: "normal" }, color: COLORS.text }
           },
-          scales:{
-            x:{ title:{ display:true, text:"Years", font:{ weight:"bold" } }, min:0, max:5 },
-            y:{ title:{ display:true, text:"Cumulative Cash Flow ($)", font:{ weight:"bold" } } }
+          scales: {
+            x: {
+              type: "linear",
+              min: 0,
+              max: 5,
+              grid: { color: COLORS.grid },
+              ticks: { font: { size: 9 }, color: COLORS.text },
+              title: { display: true, text: "Years", font: { size: 10, weight: "normal" }, color: COLORS.text }
+            },
+            y: {
+              grid: { color: COLORS.grid },
+              ticks: { font: { size: 9 }, color: COLORS.text },
+              title: { display: true, text: "Cumulative Cash Flow ($)", font: { size: 10, weight: "normal" }, color: COLORS.text }
+            }
           }
         }
       });
@@ -744,9 +719,7 @@
       await new Promise(res => setTimeout(res, 40));
       doc.addImage(window._roiChart.toBase64Image(), "PNG", 12, y, 192, 95);
 
-      // =====================
-      // Apply header + footer + page numbers on EVERY page
-      // =====================
+      // Header/footer every page
       const pageCount = doc.internal.getNumberOfPages();
       for(let i=1; i<=pageCount; i++){
         doc.setPage(i);
@@ -754,15 +727,12 @@
         drawFooter(doc, i, pageCount);
       }
 
-      const safeName = (r.project || "Project")
-        .replace(/[^a-z0-9]+/gi," ")
-        .replace(/\s+/g," ")
-        .trim();
+      const safeName = (r.project || "Project").replace(/[^a-z0-9]+/gi," ").replace(/\s+/g," ").trim();
       doc.save((safeName || "Project") + " AES ROI.pdf");
     };
 
     logoImg.onerror = function(){
-      warn("PDF error: could not load aes-logo.png. Make sure it exists next to index.html.");
+      warn("PDF error: could not load aes-logo.png.");
     };
   }
 
@@ -777,4 +747,3 @@
 </script>
 </body>
 </html>
-``

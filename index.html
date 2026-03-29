@@ -223,6 +223,7 @@
   </div>
 
   <!-- Top row -->
+  <div class="panel">
   <div class="grid">
     <div style="grid-column: span 2;">
       <label>Project Name</label>
@@ -233,7 +234,9 @@
       <input id="custEmail" type="email" placeholder="customer@company.com">
     </div>
   </div>
-    <!-- Electric Rate + Costs -->
+</div>
+<!-- Electric Rate + Costs -->
+  <div class="panel">
   <div class="grid">
     <div>
       <label>Electric Rate ($/kWh)</label>
@@ -243,8 +246,8 @@
     <div></div>
     <div></div>
   </div>
-
-  <!-- MULTI-FIXTURE TABLE (replaces single fixture inputs) -->
+</div>
+<!-- MULTI-FIXTURE TABLE (replaces single fixture inputs) -->
     <div class="panel fixtures-panel">
     <label style="display:block;margin-bottom:6px;">Fixture Lines</label>
     <div class="small">Add one row per fixture type. The calculator sums all rows.</div>
@@ -663,8 +666,7 @@
     const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
 
     // Summarize rows
-    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr, Controls: ${x.controls==="Yes"?"Yes":"No"}`).join("
-");
+    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr, Controls: ${x.controls==="Yes"?"Yes":"No"}`).join("\n");
 
     let bodyText =
       "Project Name: " + r.project + "\n\n" +

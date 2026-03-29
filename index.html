@@ -223,24 +223,31 @@
   </div>
 
   <!-- Top row -->
-  <!-- Electric Rate + Costs -->
-  <div class="panel">
+<!-- PROJECT + RATE (COMBINED PANEL) -->
+<div class="panel">
+
+  <!-- Project Name + Customer Email -->
   <div class="grid">
     <div style="grid-column: span 2;">
       <label>Project Name</label>
       <input id="projectName" type="text" placeholder="e.g., ABC Warehouse Retrofit">
     </div>
+
     <div>
       <label>Customer Email (To:)</label>
       <input id="custEmail" type="email" placeholder="customer@company.com">
     </div>
+  </div>
 
-    <div class="grid">
-       <label>Electric Rate ($/kWh)</label>
+  <!-- Electric Rate -->
+  <div class="grid" style="margin-top:6px;">
+    <div>
+      <label>Electric Rate ($/kWh)</label>
       <input id="rate" class="rate4" type="text" value="0.1636" inputmode="decimal">
       <div class="rate-note">Average Illinois Electric Rate</div>
     </div>
   </div>
+
 </div>
 <!-- MULTI-FIXTURE TABLE (replaces single fixture inputs) -->
     <div class="panel fixtures-panel">

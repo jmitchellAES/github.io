@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lighting ROI Calculator</title>
 
+<meta http-equiv="cache-control" content="no-cache" />
+<meta http-equiv="expires" content="0" />
+<meta http-equiv="pragma" content="no-cache" />
+
 <style>
   :root{
     --brand:#0a5c7d;
@@ -18,6 +22,7 @@
     background: var(--bg);
     margin: 0;
     padding: 24px;
+    color:#111;
   }
   .container{
     max-width: 1040px;
@@ -28,245 +33,777 @@
     box-shadow: 0 8px 26px rgba(0,0,0,.08);
   }
 
+  /* Header row: logo left, title centered within same line */
   .header{
     display:flex;
     align-items:center;
-    gap:12px;
-    margin-bottom:16px;
+    margin-bottom: 14px;
+    gap: 12px;
   }
-  .logo{ max-height:62px; }
+  .logo{
+    max-height: 62px;
+    max-width: 240px;
+    display:block;
+    flex: 0 0 auto;
+  }
   .page-title{
-    flex:1;
-    text-align:center;
-    font-size:32px;
-    font-weight:800;
-    color:var(--brand);
-    margin:0;
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--brand);
+    margin: 0;
+    line-height: 1.1;
   }
-  .header-spacer{ width:62px; }
+  .header-spacer{
+    flex: 0 0 auto;
+    width: 240px;
+  }
+  @media (max-width: 900px){
+    .header{
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-spacer{ display:none; }
+  }
 
   label{ font-size:13px; font-weight:bold; }
   input{
     width:100%;
-    padding:10px;
-    margin:6px 0 14px;
-    border-radius:10px;
-    border:1px solid var(--border);
+    padding: 10px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background:#fff;
+    box-sizing: border-box;
   }
   .grid{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:14px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
-  .panel{
-    border:1px solid var(--border);
-    background:var(--soft);
-    border-radius:12px;
-    padding:14px;
-    margin-bottom:14px;
+  @media (max-width: 900px){
+    .grid{ grid-template-columns: 1fr; }
   }
-  .row{ display:flex; gap:10px; flex-wrap:wrap; }
 
-  button{
-    padding:10px 16px;
-    border-radius:10px;
-    border:none;
-    font-weight:bold;
-    cursor:pointer;
+  .panel{
+    border: 1px solid var(--border);
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
   }
-  .primary{ background:var(--brand); color:#fff; }
-  .secondary{ background:#e8eef3; color:var(--brand); }
+  .toggleRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 6px;
+  }
+  .toggleRow input{
+    width:18px;
+    height:18px;
+    margin:0;
+  }
+  .small{ font-size: 12px; color: #555; margin-top: 6px; }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top: 6px;
+  }
+  button{
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .primary{ background: var(--brand); color:#fff; }
+  .secondary{ background:#e8eef3; color: var(--brand); }
+
+  .warn{
+    display:none;
+    margin-top:12px;
+    padding: 10px;
+    border-radius: 12px;
+    background:#fffbeb;
+    border:1px solid #fcd34d;
+    color:#92400e;
+    font-size:12px;
+  }
 
   table{
     width:100%;
-    border-collapse:collapse;
-    margin-top:16px;
+    border-collapse: collapse;
+    margin-top: 16px;
   }
-  th,td{
-    border:1px solid #ccc;
-    padding:10px;
+  th, td{
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align:left;
   }
   th{ background:#f0f3f6; }
+  .highlight{ font-weight:bold; background:#f9fbfd; }
 
   .footer{
-    margin-top:14px;
-    font-size:12px;
-    border-top:1px solid #ddd;
-    padding-top:12px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #444;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    line-height: 1.35;
   }
 </style>
 
-https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.jsscript>
-https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.jsscript>
+<!-- libs -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
 <div class="container">
 
-<div class="header">
-  aes-logo.png
-  <h1 class="page-title">Lighting ROI Calculator</h1>
-  <div class="header-spacer"></div>
-</div>
+  <div class="header">
+    <img class="logo" src="aes-logo.png" alt="AES logo">
+    <h1 class="page-title">Lighting ROI Calculator</h1>
+    <div class="header-spacer"></div>
+  </div>
 
-<button class="secondary" id="btnPdf">PDF Report</button>
+  <div class="grid">
+    <div style="grid-column: span 2;">
+      <label>Project Name</label>
+      <input id="projectName" type="text" placeholder="e.g., ABC Warehouse Retrofit">
+    </div>
+    <div>
+      <label>Customer Email (To:)</label>
+      <input id="custEmail" type="email" placeholder="customer@company.com">
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <label>Number of Fixtures</label>
+      <input id="qty" type="number" value="50">
+    </div>
+    <div>
+      <label>Old Wattage (W)</label>
+      <input id="oldW" type="number" value="400">
+    </div>
+    <div>
+      <label>New Wattage (W)</label>
+      <input id="newW" type="number" value="150">
+    </div>
+
+    <div>
+      <label>Hours Per Day (Occupied)</label>
+      <input id="hours" type="number" value="12">
+    </div>
+    <div>
+      <label>Days Per Year</label>
+      <input id="days" type="number" value="365">
+    </div>
+    <div>
+      <label>Electric Rate ($/kWh)</label>
+      <input id="rate" type="number" step="0.0001" value="0.1228">
+      <div class="small">Estimated Illinois Rate</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label>Fixture Cost ($)</label>
+        <input id="fixtureCost" type="number" value="8500">
+      </div>
+      <div>
+        <label>Labor Cost ($)</label>
+        <input id="laborCost" type="number" value="0">
+      </div>
+      <div>
+        <label>Fixture Rebate ($)</label>
+        <input id="fixtureRebate" type="number" value="0">
+      </div>
+
+      <div>
+        <label>Controls Cost ($)</label>
+        <input id="controlsCost" type="number" value="1000">
+      </div>
+      <div>
+        <label>Controls Rebate ($)</label>
+        <input id="controlsRebate" type="number" value="0">
+      </div>
+      <div></div>
+    </div>
+    <div class="small">
+      Labor is included in both scenarios. Controls cost/rebate apply only when Controls are enabled.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toggleRow">
+      <input id="controlsEnabled" type="checkbox">
+      <label style="margin:0;">Add Controls (2‑Level Dim → Off)</label>
+    </div>
+
+    <div id="controlsFields" style="display:none;">
+      <div class="grid">
+        <div>
+          <label>Dim Level 1 (% Output) (Starting Level)</label>
+          <input id="lvl1Pct" type="number" value="70">
+        </div>
+        <div>
+          <label>Time at Level 1 (Minutes)</label>
+          <input id="lvl1Min" type="number" value="30">
+        </div>
+        <div>
+          <label>Dim Level 2 (% Output)</label>
+          <input id="lvl2Pct" type="number" value="30">
+        </div>
+        <div>
+          <label>Time at Level 2 (Minutes)</label>
+          <input id="lvl2Min" type="number" value="30">
+        </div>
+      </div>
+      <div class="small">
+        Model: On motion → Level 1. After Level 1 time → Level 2. After Level 2 time → OFF until motion again.
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="btnCalc" type="button">Calculate</button>
+    <button class="secondary" id="btnEmail" type="button">Email</button>
+    <button class="secondary" id="btnPdf" type="button">PDF Report</button>
+  </div>
+
+  <div class="warn" id="warn"></div>
+
+  <table>
+    <tr>
+      <th>Project</th>
+      <td colspan="2" id="outProject">—</td>
+    </tr>
+    <tr>
+      <th></th>
+      <th>Fixtures Only</th>
+      <th>Fixtures + Controls</th>
+    </tr>
+    <tr>
+      <td>Annual kWh Saved</td>
+      <td id="kwhFix">—</td>
+      <td id="kwhCtrl">—</td>
+    </tr>
+    <tr>
+      <td>Annual Savings ($)</td>
+      <td id="sFix">—</td>
+      <td id="sCtrl">—</td>
+    </tr>
+    <tr>
+      <td>Total Project Cost (Net of Rebates)</td>
+      <td id="cFix">—</td>
+      <td id="cCtrl">—</td>
+    </tr>
+    <tr class="highlight">
+      <td>ROI (Simple Payback)</td>
+      <td id="pFix">—</td>
+      <td id="pCtrl">—</td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    Prepared by <b>Jeffrey Mitchell</b> • jmitchell@allelectricsales.com • 847 830 8447
+  </div>
+</div>
 
 <script>
 (function(){
+  const $ = (id)=>document.getElementById(id);
 
-const COLORS = {
-  brand:"#0a5c7d",
-  rebate:"#22c55e",
-  zero:"#dc2626",
-  grid:"rgba(0,0,0,0.06)"
-};
-
-function generatePdfReport(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit:"mm", format:"letter" });
-  doc.setFont("times","normal");
-  doc.setFontSize(11);
-
-  const dateStr = new Date().toLocaleDateString();
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-
-  /* ===== COVER ===== */
-  doc.addImage("aes-logo.png","PNG",(pageW-70)/2,(pageH/2)-40,70,26);
-  doc.setFont("times","bold"); doc.setFontSize(18);
-  doc.text("Project Name",pageW/2,(pageH/2),{align:"center"});
-  doc.setFont("times","normal"); doc.setFontSize(12);
-  doc.text(dateStr,pageW/2,(pageH/2)+10,{align:"center"});
-
-  /* ===== PAGE 2 — DATA ===== */
-  doc.addPage();
-  let y = 36;
-
-  function section(t){
-    doc.setFillColor(240,243,246);
-    doc.rect(12,y,192,8,"F");
-    doc.setFont("times","bold");
-    doc.text(t,14,y+5.5);
-    doc.setFont("times","normal");
-    y += 14;
-  }
-  function row(l,v){
-    doc.text(l,14,y);
-    doc.text(v,120,y);
-    y += 6.5;
-  }
-
-  section("Fixtures");
-  row("Existing Fixtures:","50 @ 400W");
-  row("Recommended Fixtures:","50 @ 150W");
-
-  section("Project Costs");
-  row("Fixture Cost:","$8,500");
-  row("Labor Cost:","$0");
-  row("Controls Cost:","$1,000");
-
-  section("Rebates");
-  row("Fixture Rebate:","$0");
-  row("Controls Rebate:","$0");
-
-  section("Project Cost Summary");
-  row("Total (No Rebates):","$9,500");
-  row("Total (With Rebates):","$9,500");
-
-  section("Results");
-  row("Annual kWh Saved:","86,231 kWh");
-  row("Annual Savings:","$10,589 / year");
-  row("ROI (Simple Payback):","0.90 years");
-
-  /* ===== PAGE 3 — CHARTS ===== */
-  doc.addPage();
-  y = 36;
-
-  /* ZERO LINE PLUGIN */
-  const zeroLinePlugin = {
-    id:"zeroLine",
-    afterDraw(chart){
-      const yScale = chart.scales.y;
-      const xScale = chart.scales.x;
-      if(!yScale) return;
-
-      const yZero = yScale.getPixelForValue(0);
-      const ctx = chart.ctx;
-
-      ctx.save();
-      ctx.strokeStyle = COLORS.zero;
-      ctx.setLineDash([6,4]);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(xScale.left, yZero);
-      ctx.lineTo(xScale.right, yZero);
-      ctx.stroke();
-      ctx.restore();
-    }
+  const FOOTER_TEXT = "Jeffrey Mitchell • jmitchell@allelectricsales.com • 847 830 8447";
+  const THEME = {
+    brand:"#0a5c7d",
+    gray:"#94a3b8",
+    green:"#22c55e",
+    grid:"rgba(0,0,0,0.06)",
+    zero:"#dc2626",
+    text:"#111827"
   };
 
-  section("ROI Graph (0–5 Years)");
+  function warn(msg){ $("warn").style.display="block"; $("warn").textContent = msg; }
+  function clearWarn(){ $("warn").style.display="none"; $("warn").textContent = ""; }
+  function money(n){ return "$" + Math.round(n).toLocaleString(); }
+  function num(n){ return Math.round(n).toLocaleString(); }
+  function payback(cost, savings){
+    if(!(savings > 0) || !(cost > 0)) return "—";
+    return (cost / savings).toFixed(2) + " years";
+  }
 
-  const roiCanvas = document.createElement("canvas");
-  roiCanvas.width = 1000;
-  roiCanvas.height = 520;
+  function toggleControlsUI(){
+    $("controlsFields").style.display = $("controlsEnabled").checked ? "block" : "none";
+  }
 
-  new Chart(roiCanvas.getContext("2d"),{
-    type:"line",
-    data:{
-      datasets:[
-        {
-          label:"No Rebates",
-          data:[{x:0,y:-9500},{x:1,y:0},{x:2,y:10000},{x:3,y:20000},{x:4,y:30000},{x:5,y:40000}],
-          parsing:false,
-          borderColor:COLORS.brand,
-          borderWidth:2,
-          pointRadius:0
-        },
-        {
-          label:"With Rebates",
-          data:[{x:0,y:-8500},{x:1,y:2000},{x:2,y:12000},{x:3,y:22000},{x:4,y:32000},{x:5,y:42000}],
-          parsing:false,
-          borderColor:COLORS.rebate,
-          borderWidth:2,
-          pointRadius:0
-        }
-      ]
-    },
-    plugins:[zeroLinePlugin],
-    options:{
-      responsive:false,
-      animation:false,
-      plugins:{
-        legend:{labels:{font:{size:10}}},
-        title:{display:true,text:"Return on Investment (0–5 Years)",font:{size:12}}
-      },
-      scales:{
-        x:{
-          type:"linear",
-          min:0,
-          max:5,
-          grid:{color:COLORS.grid},
-          ticks:{font:{size:9}},
-          title:{display:true,text:"Years",font:{size:10}}
-        },
-        y:{
-          grid:{color:COLORS.grid},
-          ticks:{font:{size:9}},
-          title:{display:true,text:"Cumulative Cash Flow ($)",font:{size:10}}
-        }
-      }
+  function calc(){
+    clearWarn();
+
+    const project = ($("projectName").value || "").trim() || "—";
+    const toEmail = ($("custEmail").value || "").trim();
+
+    const qty = Number($("qty").value);
+    const oldW = Number($("oldW").value);
+    const newW = Number($("newW").value);
+    const hrs = Number($("hours").value);
+    const days = Number($("days").value);
+    const rate = Number($("rate").value);
+
+    const fixtureCost = Number($("fixtureCost").value);
+    const laborCost = Number($("laborCost").value);
+    const fixtureRebate = Number($("fixtureRebate").value);
+
+    const controlsCost = Number($("controlsCost").value);
+    const controlsRebate = Number($("controlsRebate").value);
+
+    const inputs = [qty,oldW,newW,hrs,days,rate,fixtureCost,laborCost,fixtureRebate,controlsCost,controlsRebate];
+    if(!(qty > 0) || inputs.some(v=>Number.isNaN(v))){
+      warn("Please enter valid numbers.");
+      return null;
     }
+    if(hrs < 0 || hrs > 24){
+      warn("Hours per day must be between 0 and 24.");
+      return null;
+    }
+
+    const controlsOn = $("controlsEnabled").checked;
+
+    const oldKwh = (qty * oldW * hrs * days) / 1000;
+    const ledKwh = (qty * newW * hrs * days) / 1000;
+
+    const kwhSavedFix = oldKwh - ledKwh;
+    const annualFix = kwhSavedFix * rate;
+
+    const grossFix = fixtureCost + laborCost;
+    const netFix = Math.max(0, grossFix - fixtureRebate);
+
+    let controlledKwhAnnual = ledKwh;
+    if(controlsOn){
+      const l1Pct = Number($("lvl1Pct").value) / 100;
+      const l2Pct = Number($("lvl2Pct").value) / 100;
+      const l1Hrs = Number($("lvl1Min").value) / 60;
+      const l2Hrs = Number($("lvl2Min").value) / 60;
+
+      if([l1Pct,l2Pct,l1Hrs,l2Hrs].some(v=>Number.isNaN(v))){
+        warn("Please enter valid controls values.");
+        return null;
+      }
+      if((l1Hrs + l2Hrs) > hrs){
+        warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours.");
+        return null;
+      }
+
+      const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
+      controlledKwhAnnual = dailyControlledKwh * days;
+    }
+
+    const kwhSavedCtrl_raw = oldKwh - controlledKwhAnnual;
+    let annualCtrl_raw = kwhSavedCtrl_raw * rate;
+    if(annualCtrl_raw < annualFix) annualCtrl_raw = annualFix;
+
+    const grossCtrl = fixtureCost + laborCost + (controlsOn ? controlsCost : 0);
+    const netCtrl_raw = Math.max(0, grossCtrl - fixtureRebate - (controlsOn ? controlsRebate : 0));
+
+    const kwhSavedCtrl = controlsOn ? kwhSavedCtrl_raw : 0;
+    const annualCtrl = controlsOn ? annualCtrl_raw : 0;
+    const netCtrl = controlsOn ? netCtrl_raw : 0;
+
+    $("outProject").textContent = project;
+
+    $("kwhFix").textContent = num(kwhSavedFix) + " kWh / year";
+    $("sFix").textContent = money(annualFix) + " / year";
+    $("cFix").textContent = money(netFix);
+    $("pFix").textContent = payback(netFix, annualFix);
+
+    $("kwhCtrl").textContent = (controlsOn ? num(kwhSavedCtrl) : "0") + " kWh / year";
+    $("sCtrl").textContent = (controlsOn ? money(annualCtrl) : "$0") + " / year";
+    $("cCtrl").textContent = controlsOn ? money(netCtrl) : "$0";
+    $("pCtrl").textContent = controlsOn ? payback(netCtrl, annualCtrl) : "—";
+
+    return {
+      project, toEmail,
+      qty, oldW, newW,
+      hrs, days, rate,
+      fixtureCost, laborCost, controlsCost,
+      fixtureRebate, controlsRebate,
+      controlsOn,
+      lvl1Pct: $("lvl1Pct").value, lvl1Min: $("lvl1Min").value,
+      lvl2Pct: $("lvl2Pct").value, lvl2Min: $("lvl2Min").value,
+      oldKwh, ledKwh,
+      kwhSavedFix, annualFix, grossFix, netFix,
+      kwhSavedCtrl_raw, annualCtrl_raw, grossCtrl, netCtrl_raw
+    };
+  }
+
+  function emailDraft(){
+    const r = calc();
+    if(!r) return;
+
+    const to = (r.toEmail || "").trim();
+    if(!to){ warn("Enter the customer email (To:)."); return; }
+
+    const subject = encodeURIComponent("AES Lighting ROI Report");
+
+    const finalKwh = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
+    const finalSavings = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
+    const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
+
+    let bodyText =
+      "Project Name: " + r.project + "\n\n" +
+      "Existing Fixtures: " + r.qty + " fixtures @ " + r.oldW + "W each\n" +
+      "Recommended Fixtures: " + r.qty + " fixtures @ " + r.newW + "W each\n\n" +
+      "Annual kWh Saved: " + Math.round(finalKwh).toLocaleString() + " kWh / year\n" +
+      "Cost Savings (Annual): " + money(finalSavings) + " / year\n" +
+      "ROI (Simple Payback): " + finalROI + "\n\n";
+
+    if(r.controlsOn){
+      bodyText +=
+        "Controls Breakdown:\n" +
+        "  Level 1: " + r.lvl1Pct + "% for " + r.lvl1Min + " min\n" +
+        "  Level 2: " + r.lvl2Pct + "% for " + r.lvl2Min + " min\n" +
+        "  Then OFF\n\n";
+    } else {
+      bodyText += "Controls: None\n\n";
+    }
+
+    bodyText +=
+      "Prepared by AES (Jeff Mitchell)\n" +
+      "jmitchell@allelectricsales.com\n" +
+      "847 830 8447\n";
+
+    const body = encodeURIComponent(bodyText);
+    const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
+
+    window.location.href =
+      "mailto:" + encodeURIComponent(to) +
+      "?bcc=" + bcc +
+      "&subject=" + subject +
+      "&body=" + body;
+  }
+
+  function fmtDate(d){
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  }
+
+  async function imgToDataUrl(img){
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth || img.width;
+    c.height = img.naturalHeight || img.height;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    return c.toDataURL("image/png");
+  }
+
+  function buildRoiSeries(initialCost, annualSavings){
+    const xs = [];
+    const ys = [];
+    for(let t=0; t<=5.0001; t+=0.25){
+      xs.push(Number(t.toFixed(2)));
+      ys.push(-initialCost + annualSavings * t);
+    }
+    return { xs, ys };
+  }
+
+  function drawHeader(doc, logoDataUrl, dateStr){
+    const pageW = doc.internal.pageSize.getWidth();
+    doc.setFillColor(255,255,255);
+    doc.rect(0, 0, pageW, 24, "F");
+
+    doc.addImage(logoDataUrl, "PNG", 12, 7, 26, 10);
+
+    doc.setTextColor(0,0,0);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.text("AES Lighting ROI Report", pageW / 2, 15, { align: "center" });
+
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.text(dateStr, pageW - 12, 16, { align: "right" });
+
+    doc.setDrawColor(220);
+    doc.line(12, 24, pageW - 12, 24);
+  }
+
+  function drawFooter(doc, pageNum, pageCount){
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    doc.setDrawColor(220);
+    doc.line(12, pageH - 14, pageW - 12, pageH - 14);
+
+    doc.setFont("times", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(70,70,70);
+
+    doc.text(FOOTER_TEXT, 12, pageH - 8);
+    doc.text(`Page ${pageNum} of ${pageCount}`, pageW - 12, pageH - 8, { align: "right" });
+  }
+
+  function generatePdfReport(){
+    const r = calc();
+    if(!r) return;
+
+    if(!window.jspdf || !window.Chart){
+      warn("PDF libraries not loaded. Refresh and try again.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "letter" });
+
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
+
+    const dateStr = fmtDate(new Date());
+
+    const annualSavingsFinal = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
+    const kwhSavedFinal = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
+
+    const initialNoRebate = r.controlsOn ? r.grossCtrl : r.grossFix;
+    const initialWithRebate = r.controlsOn ? r.netCtrl_raw : r.netFix;
+
+    const roiNoRebate = payback(initialNoRebate, annualSavingsFinal);
+    const roiWithRebate = payback(initialWithRebate, annualSavingsFinal);
+    const monthlyDecrease = annualSavingsFinal / 12;
+
+    const existingKwh = r.oldKwh;
+    const recommendedKwh = r.ledKwh;
+
+    // Plugin: red dashed $0 horizontal line on ROI chart
+    const zeroLinePlugin = {
+      id:"zeroLine",
+      afterDraw(chart){
+        const yScale = chart.scales.y;
+        const xScale = chart.scales.x;
+        if(!yScale || !xScale) return;
+        const y0 = yScale.getPixelForValue(0);
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.strokeStyle = THEME.zero;
+        ctx.setLineDash([6,4]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xScale.left, y0);
+        ctx.lineTo(xScale.right, y0);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
+    const logoImg = new Image();
+    logoImg.src = "aes-logo.png";
+
+    logoImg.onload = async function(){
+      const logoDataUrl = await imgToDataUrl(logoImg);
+
+      // PAGE 1 — COVER
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const logoW = 70, logoH = 26;
+
+      doc.addImage(logoDataUrl, "PNG", (pageW-logoW)/2, (pageH/2)-40, logoW, logoH);
+      doc.setFont("times","bold"); doc.setFontSize(18);
+      doc.text(r.project, pageW/2, (pageH/2), { align:"center" });
+      doc.setFont("times","normal"); doc.setFontSize(12);
+      doc.text(dateStr, pageW/2, (pageH/2)+10, { align:"center" });
+
+      // PAGE 2 — DATA ONLY (ORDER FIXED)
+      doc.addPage();
+      let y = 36;
+
+      function section(title){
+        y += 4;
+        doc.setFillColor(240, 243, 246);
+        doc.rect(12, y, 192, 8, "F");
+        doc.setFont("times","bold");
+        doc.setFontSize(12);
+        doc.text(title, 14, y + 5.7);
+        y += 14;
+        doc.setFont("times","normal");
+        doc.setFontSize(11);
+      }
+      function row(label, value){
+        doc.text(label, 14, y);
+        doc.text(value, 120, y);
+        y += 6.5;
+      }
+
+      // 1) Fixtures
+      section("Fixtures");
+      row("Existing Fixtures:", `${r.qty} fixtures @ ${r.oldW}W`);
+      row("Recommended Fixtures:", `${r.qty} fixtures @ ${r.newW}W`);
+
+      // 2) Project Costs
+      section("Project Costs");
+      row("Fixture Cost:", `$${Math.round(r.fixtureCost).toLocaleString()}`);
+      row("Labor Cost:", `$${Math.round(r.laborCost).toLocaleString()}`);
+      row("Controls Cost:", r.controlsOn ? `$${Math.round(r.controlsCost).toLocaleString()}` : "$0");
+
+      // 3) Rebates
+      section("Rebates");
+      row("Fixture Rebate:", `$${Math.round(r.fixtureRebate).toLocaleString()}`);
+      row("Controls Rebate:", r.controlsOn ? `$${Math.round(r.controlsRebate).toLocaleString()}` : "$0");
+
+      // 4) Project Cost Summary
+      section("Project Cost Summary");
+      row("Total (No Rebates):", `$${Math.round(initialNoRebate).toLocaleString()}`);
+      row("Total (With Rebates):", `$${Math.round(initialWithRebate).toLocaleString()}`);
+
+      // 5) Results
+      section("Results");
+      row("Annual kWh Saved:", `${Math.round(kwhSavedFinal).toLocaleString()} kWh`);
+      row("Annual Savings:", `$${Math.round(annualSavingsFinal).toLocaleString()} / year`);
+      row("Monthly Decrease:", `$${Math.round(monthlyDecrease).toLocaleString()} / month`);
+      row("ROI (No Rebates):", roiNoRebate);
+      row("ROI (With Rebates):", roiWithRebate);
+
+      if(r.controlsOn){
+        section("Controls Breakdown");
+        row("Level 1:", `${r.lvl1Pct}% for ${r.lvl1Min} min`);
+        row("Level 2:", `${r.lvl2Pct}% for ${r.lvl2Min} min`);
+        row("After Level 2:", "OFF");
+      }
+
+      // PAGE 3 — CHARTS ONLY
+      doc.addPage();
+      y = 36;
+
+      section("Annual kWh Usage (Existing vs Recommended)");
+
+      // Bar chart
+      const barCanvas = document.createElement("canvas");
+      barCanvas.width = 1000;
+      barCanvas.height = 520;
+      const barCtx = barCanvas.getContext("2d");
+
+      if(window._kwhChart){ window._kwhChart.destroy(); }
+      window._kwhChart = new Chart(barCtx, {
+        type:"bar",
+        data:{
+          labels:["Existing","Recommended"],
+          datasets:[{
+            label:"kWh per year",
+            data:[existingKwh, recommendedKwh],
+            backgroundColor:[THEME.brand, THEME.gray],
+            borderColor:[THEME.brand, THEME.gray],
+            borderWidth:1
+          }]
+        },
+        options:{
+          responsive:false,
+          animation:false,
+          plugins:{
+            legend:{ display:false },
+            title:{ display:true, text:"Annual kWh Usage", font:{ size:12, weight:"normal" }, color:THEME.text }
+          },
+          scales:{
+            x:{
+              grid:{ color:THEME.grid },
+              ticks:{ font:{ size:9 }, color:THEME.text },
+              title:{ display:true, text:"Fixture Type", font:{ size:10, weight:"normal" }, color:THEME.text }
+            },
+            y:{
+              grid:{ color:THEME.grid },
+              ticks:{ font:{ size:9 }, color:THEME.text },
+              title:{ display:true, text:"kWh per Year", font:{ size:10, weight:"normal" }, color:THEME.text }
+            }
+          }
+        }
+      });
+
+      await new Promise(res => setTimeout(res, 40));
+      doc.addImage(window._kwhChart.toBase64Image(), "PNG", 12, y, 192, 85);
+      y += 98;
+
+      section("ROI Graph (0–5 Years)");
+
+      // ROI chart
+      const roiCanvas = document.createElement("canvas");
+      roiCanvas.width = 1000;
+      roiCanvas.height = 560;
+      const roiCtx = roiCanvas.getContext("2d");
+
+      const s1 = buildRoiSeries(initialNoRebate, annualSavingsFinal);
+      const s2 = buildRoiSeries(initialWithRebate, annualSavingsFinal);
+
+      if(window._roiChart){ window._roiChart.destroy(); }
+      window._roiChart = new Chart(roiCtx, {
+        type:"line",
+        data:{
+          labels:s1.xs,
+          datasets:[
+            { label:"No Rebates", data:s1.ys, borderColor:THEME.brand, borderWidth:2, pointRadius:0, tension:0.2 },
+            { label:"With Rebates", data:s2.ys, borderColor:THEME.green, borderWidth:2, pointRadius:0, tension:0.2 }
+          ]
+        },
+        plugins:[zeroLinePlugin],
+        options:{
+          responsive:false,
+          animation:false,
+          plugins:{
+            legend:{ display:true, labels:{ font:{ size:10, weight:"normal" }, color:THEME.text } },
+            title:{ display:true, text:"Return on Investment (0–5 Years)", font:{ size:12, weight:"normal" }, color:THEME.text }
+          },
+          scales:{
+            x:{
+              min:0, max:5,
+              grid:{ color:THEME.grid },
+              ticks:{ font:{ size:9 }, color:THEME.text },
+              title:{ display:true, text:"Years", font:{ size:10, weight:"normal" }, color:THEME.text }
+            },
+            y:{
+              grid:{ color:THEME.grid },
+              ticks:{ font:{ size:9 }, color:THEME.text },
+              title:{ display:true, text:"Cumulative Cash Flow ($)", font:{ size:10, weight:"normal" }, color:THEME.text }
+            }
+          }
+        }
+      });
+
+      await new Promise(res => setTimeout(res, 40));
+      doc.addImage(window._roiChart.toBase64Image(), "PNG", 12, y, 192, 95);
+
+      // Header/footer on every page
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i=1; i<=pageCount; i++){
+        doc.setPage(i);
+        drawHeader(doc, logoDataUrl, dateStr);
+        drawFooter(doc, i, pageCount);
+      }
+
+      const safeName = (r.project || "Project")
+        .replace(/[^a-z0-9]+/gi," ")
+        .replace(/\s+/g," ")
+        .trim();
+
+      doc.save((safeName || "Project") + " AES ROI.pdf");
+    };
+
+    logoImg.onerror = function(){
+      warn("PDF error: could not load aes-logo.png. Make sure it exists next to index.html.");
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    $("controlsEnabled").addEventListener("change", toggleControlsUI);
+    $("btnCalc").addEventListener("click", calc);
+    $("btnEmail").addEventListener("click", emailDraft);
+    $("btnPdf").addEventListener("click", generatePdfReport);
+    toggleControlsUI();
   });
-
-  doc.addImage(roiCanvas.toDataURL(),"PNG",12,y,192,95);
-  doc.save("Project AES ROI.pdf");
-}
-
-document.getElementById("btnPdf").onclick = generatePdfReport;
 })();
 </script>
-
-</div>
 </body>
 </html>

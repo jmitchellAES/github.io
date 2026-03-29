@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lighting ROI Calculator</title>
-
 <meta http-equiv="cache-control" content="no-cache" />
 <meta http-equiv="expires" content="0" />
 <meta http-equiv="pragma" content="no-cache" />
@@ -32,7 +31,6 @@
     border-radius: 12px;
     box-shadow: 0 8px 26px rgba(0,0,0,.08);
   }
-
   /* Header row: logo left, title centered within same line */
   .header{
     display:flex;
@@ -67,9 +65,18 @@
     }
     .header-spacer{ display:none; }
   }
-
   label{ font-size:13px; font-weight:bold; }
   input{
+    width:100%;
+    padding: 10px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background:#fff;
+    box-sizing: border-box;
+  }
+  select{
     width:100%;
     padding: 10px;
     margin-top: 6px;
@@ -87,7 +94,6 @@
   @media (max-width: 900px){
     .grid{ grid-template-columns: 1fr; }
   }
-
   .panel{
     border: 1px solid var(--border);
     background: var(--soft);
@@ -106,8 +112,7 @@
     height:18px;
     margin:0;
   }
-  .small{ font-size: 12px; color: #555; margin-top: 6px; }
-
+  .small{ font-size: 12px; color: #555; margin-top: 6px; line-height:1.35; }
   .row{
     display:flex;
     gap:10px;
@@ -123,7 +128,7 @@
   }
   .primary{ background: var(--brand); color:#fff; }
   .secondary{ background:#e8eef3; color: var(--brand); }
-
+  .danger{ background:#ffe6ea; color:#9b1c1c; }
   .warn{
     display:none;
     margin-top:12px;
@@ -134,20 +139,20 @@
     color:#92400e;
     font-size:12px;
   }
-
   table{
     width:100%;
     border-collapse: collapse;
-    margin-top: 16px;
+    margin-top: 12px;
+    background:#fff;
   }
   th, td{
     border: 1px solid #ccc;
     padding: 10px;
     text-align:left;
+    vertical-align: top;
   }
   th{ background:#f0f3f6; }
   .highlight{ font-weight:bold; background:#f9fbfd; }
-
   .footer{
     margin-top: 14px;
     font-size: 12px;
@@ -155,6 +160,30 @@
     border-top: 1px solid #e5e7eb;
     padding-top: 12px;
     line-height: 1.35;
+  }
+
+  /* Fixture table inputs */
+  .tInput{
+    width:100%;
+    padding: 8px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    margin:0;
+    box-sizing:border-box;
+  }
+  .tInputSmall{
+    width:100%;
+    padding: 8px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    margin:0;
+    box-sizing:border-box;
+  }
+  .btnBar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top: 10px;
   }
 </style>
 
@@ -165,13 +194,13 @@
 
 <body>
 <div class="container">
-
   <div class="header">
     <img class="logo" src="aes-logo.png" alt="AES logo">
     <h1 class="page-title">Lighting ROI Calculator</h1>
     <div class="header-spacer"></div>
   </div>
 
+  <!-- Top row -->
   <div class="grid">
     <div style="grid-column: span 2;">
       <label>Project Name</label>
@@ -183,57 +212,66 @@
     </div>
   </div>
 
-  <div class="grid">
-    <div>
-      <label>Number of Fixtures</label>
-      <input id="qty" type="number" value="50">
-    </div>
-    <div>
-      <label>Old Wattage (W)</label>
-      <input id="oldW" type="number" value="400">
-    </div>
-    <div>
-      <label>New Wattage (W)</label>
-      <input id="newW" type="number" value="150">
+  <!-- MULTI-FIXTURE TABLE (replaces single fixture inputs) -->
+  <div class="panel">
+    <label style="display:block;margin-bottom:6px;">Fixture Lines</label>
+    <div class="small">Add one row per fixture type. The calculator sums all rows.</div>
+
+    <table id="fixtureTable">
+      <thead>
+        <tr>
+          <th style="width:22%;">Line Name</th>
+          <th style="width:10%;">Qty</th>
+          <th style="width:12%;">Old W</th>
+          <th style="width:12%;">New W</th>
+          <th style="width:12%;">Hours/Day</th>
+          <th style="width:12%;">Days/Year</th>
+          <th style="width:20%;">Remove</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="btnBar">
+      <button class="secondary" id="addFixtureRow" type="button">+ Add fixture row</button>
+      <button class="danger" id="clearFixtureRows" type="button">Clear rows</button>
     </div>
 
-    <div>
-      <label>Hours Per Day (Occupied)</label>
-      <input id="hours" type="number" value="12">
-    </div>
-    <div>
-      <label>Days Per Year</label>
-      <input id="days" type="number" value="365">
-    </div>
+    <div class="small" id="fixtureTotals">Totals: —</div>
+  </div>
+
+  <!-- Electric Rate + Costs -->
+  <div class="grid">
     <div>
       <label>Electric Rate ($/kWh)</label>
-      <input id="rate" type="number" step="0.0001" value="0.1228">
-      <div class="small">Estimated Illinois Rate</div>
+      <input id="rate" class="rate4" type="text" value="0.1636" inputmode="decimal">
+      <div class="small">Average Illinois Electric Rate</div>
     </div>
+    <div></div>
+    <div></div>
   </div>
 
   <div class="panel">
     <div class="grid">
       <div>
         <label>Fixture Cost ($)</label>
-        <input id="fixtureCost" type="number" value="8500">
+        <input id="fixtureCost" class="money2" type="text" value="8500">
       </div>
       <div>
         <label>Labor Cost ($)</label>
-        <input id="laborCost" type="number" value="0">
+        <input id="laborCost" class="money2" type="text" value="0">
       </div>
       <div>
         <label>Fixture Rebate ($)</label>
-        <input id="fixtureRebate" type="number" value="0">
+        <input id="fixtureRebate" class="money2" type="text" value="0">
       </div>
-
       <div>
         <label>Controls Cost ($)</label>
-        <input id="controlsCost" type="number" value="1000">
+        <input id="controlsCost" class="money2" type="text" value="1000">
       </div>
       <div>
         <label>Controls Rebate ($)</label>
-        <input id="controlsRebate" type="number" value="0">
+        <input id="controlsRebate" class="money2" type="text" value="0">
       </div>
       <div></div>
     </div>
@@ -321,7 +359,6 @@
 <script>
 (function(){
   const $ = (id)=>document.getElementById(id);
-
   const FOOTER_TEXT = "Jeffrey Mitchell • jmitchell@allelectricsales.com • 847 830 8447";
   const THEME = {
     brand:"#0a5c7d",
@@ -332,10 +369,66 @@
     text:"#111827"
   };
 
+  // ---------- formatting ----------
+  function parseLoose(v){
+    if(v == null) return 0;
+    const s = String(v).replace(/[$,]/g,"").trim();
+    const n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function fmtMoney2(n){
+    n = parseLoose(n);
+    return "$" + n.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtRate4(n){
+    n = parseLoose(n);
+    return n.toFixed(4);
+  }
+
+  function bindMoney2(el){
+    if(!el) return;
+    // init
+    el.value = fmtMoney2(el.value);
+    el.addEventListener("focus", ()=>{
+      const raw = parseLoose(el.value);
+      el.value = raw ? String(raw) : "";
+      el.select();
+    });
+    el.addEventListener("blur", ()=>{
+      el.value = fmtMoney2(el.value);
+    });
+    el.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        el.blur(); // formats immediately
+      }
+    });
+  }
+
+  function bindRate4(el){
+    if(!el) return;
+    el.value = fmtRate4(el.value);
+    el.addEventListener("focus", ()=>{
+      const raw = parseLoose(el.value);
+      el.value = raw ? String(raw) : "";
+      el.select();
+    });
+    el.addEventListener("blur", ()=>{
+      el.value = fmtRate4(el.value);
+    });
+    el.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        el.blur();
+      }
+    });
+  }
+
+  // warn helpers
   function warn(msg){ $("warn").style.display="block"; $("warn").textContent = msg; }
   function clearWarn(){ $("warn").style.display="none"; $("warn").textContent = ""; }
-  function money(n){ return "$" + Math.round(n).toLocaleString(); }
-  function num(n){ return Math.round(n).toLocaleString(); }
+
   function payback(cost, savings){
     if(!(savings > 0) || !(cost > 0)) return "—";
     return (cost / savings).toFixed(2) + " years";
@@ -345,65 +438,140 @@
     $("controlsFields").style.display = $("controlsEnabled").checked ? "block" : "none";
   }
 
+  // ---------- fixtures table ----------
+  function addFixtureRow(prefill){
+    const tbody = $("fixtureTable").querySelector("tbody");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input class="tInput" placeholder="e.g., High Bay" value="${prefill?.name||""}"></td>
+      <td><input class="tInputSmall" type="number" min="0" step="1" value="${prefill?.qty??1}"></td>
+      <td><input class="tInputSmall" type="number" min="0" step="1" value="${prefill?.oldW??0}"></td>
+      <td><input class="tInputSmall" type="number" min="0" step="1" value="${prefill?.newW??0}"></td>
+      <td><input class="tInputSmall" type="number" min="0" step="0.25" value="${prefill?.hours??12}"></td>
+      <td><input class="tInputSmall" type="number" min="0" step="1" value="${prefill?.days??365}"></td>
+      <td><button class="danger" type="button">Remove</button></td>
+    `;
+    tr.querySelector("button").onclick = ()=>{ tr.remove(); updateFixtureTotals(); };
+    tr.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("input", updateFixtureTotals);
+    });
+    tbody.appendChild(tr);
+    updateFixtureTotals();
+  }
+
+  function clearFixtureRows(){
+    $("fixtureTable").querySelector("tbody").innerHTML = "";
+    updateFixtureTotals();
+  }
+
+  function getFixtureRows(){
+    const rows = [...$("fixtureTable").querySelector("tbody").querySelectorAll("tr")];
+    return rows.map(tr=>{
+      const tds = tr.querySelectorAll("td");
+      const name = tds[0].querySelector("input").value.trim() || "Line";
+      const qty = parseLoose(tds[1].querySelector("input").value);
+      const oldW = parseLoose(tds[2].querySelector("input").value);
+      const newW = parseLoose(tds[3].querySelector("input").value);
+      const hours = parseLoose(tds[4].querySelector("input").value);
+      const days = parseLoose(tds[5].querySelector("input").value);
+      return { name, qty, oldW, newW, hours, days };
+    }).filter(r=> r.qty>0);
+  }
+
+  function updateFixtureTotals(){
+    const rows = getFixtureRows();
+    let qtyTotal = 0;
+    let oldKwh = 0;
+    let newKwh = 0;
+
+    rows.forEach(r=>{
+      qtyTotal += r.qty;
+      oldKwh += (r.qty * r.oldW * r.hours * r.days) / 1000;
+      newKwh += (r.qty * r.newW * r.hours * r.days) / 1000;
+    });
+
+    $("fixtureTotals").textContent =
+      rows.length===0
+      ? "Totals: —"
+      : `Totals: ${Math.round(qtyTotal).toLocaleString()} fixtures • Existing ${Math.round(oldKwh).toLocaleString()} kWh/yr • New ${Math.round(newKwh).toLocaleString()} kWh/yr`;
+  }
+
+  // ---------- calc ----------
   function calc(){
     clearWarn();
 
     const project = ($("projectName").value || "").trim() || "—";
     const toEmail = ($("custEmail").value || "").trim();
 
-    const qty = Number($("qty").value);
-    const oldW = Number($("oldW").value);
-    const newW = Number($("newW").value);
-    const hrs = Number($("hours").value);
-    const days = Number($("days").value);
-    const rate = Number($("rate").value);
+    const rows = getFixtureRows();
+    if(rows.length === 0){
+      warn("Add at least one fixture row.");
+      return null;
+    }
 
-    const fixtureCost = Number($("fixtureCost").value);
-    const laborCost = Number($("laborCost").value);
-    const fixtureRebate = Number($("fixtureRebate").value);
+    const rate = parseLoose($("rate").value);
+    const fixtureCost = parseLoose($("fixtureCost").value);
+    const laborCost = parseLoose($("laborCost").value);
+    const fixtureRebate = parseLoose($("fixtureRebate").value);
+    const controlsCost = parseLoose($("controlsCost").value);
+    const controlsRebate = parseLoose($("controlsRebate").value);
 
-    const controlsCost = Number($("controlsCost").value);
-    const controlsRebate = Number($("controlsRebate").value);
-
-    const inputs = [qty,oldW,newW,hrs,days,rate,fixtureCost,laborCost,fixtureRebate,controlsCost,controlsRebate];
-    if(!(qty > 0) || inputs.some(v=>Number.isNaN(v))){
+    if([rate,fixtureCost,laborCost,fixtureRebate,controlsCost,controlsRebate].some(v=>Number.isNaN(v))){
       warn("Please enter valid numbers.");
       return null;
     }
-    if(hrs < 0 || hrs > 24){
-      warn("Hours per day must be between 0 and 24.");
-      return null;
-    }
 
-    const controlsOn = $("controlsEnabled").checked;
+    // total baseline and LED kWh
+    let oldKwh = 0;
+    let ledKwh = 0;
 
-    const oldKwh = (qty * oldW * hrs * days) / 1000;
-    const ledKwh = (qty * newW * hrs * days) / 1000;
+    rows.forEach(r=>{
+      if(r.hours < 0 || r.hours > 24){
+        warn("Hours per day must be between 0 and 24.");
+        return null;
+      }
+      oldKwh += (r.qty * r.oldW * r.hours * r.days) / 1000;
+      ledKwh += (r.qty * r.newW * r.hours * r.days) / 1000;
+    });
 
     const kwhSavedFix = oldKwh - ledKwh;
     const annualFix = kwhSavedFix * rate;
-
     const grossFix = fixtureCost + laborCost;
     const netFix = Math.max(0, grossFix - fixtureRebate);
 
+    const controlsOn = $("controlsEnabled").checked;
+
+    // Controls model applied to the TOTAL LED kWh
     let controlledKwhAnnual = ledKwh;
+
     if(controlsOn){
       const l1Pct = Number($("lvl1Pct").value) / 100;
       const l2Pct = Number($("lvl2Pct").value) / 100;
-      const l1Hrs = Number($("lvl1Min").value) / 60;
-      const l2Hrs = Number($("lvl2Min").value) / 60;
+      const l1Min = Number($("lvl1Min").value);
+      const l2Min = Number($("lvl2Min").value);
+
+      const l1Hrs = l1Min / 60;
+      const l2Hrs = l2Min / 60;
 
       if([l1Pct,l2Pct,l1Hrs,l2Hrs].some(v=>Number.isNaN(v))){
         warn("Please enter valid controls values.");
         return null;
       }
-      if((l1Hrs + l2Hrs) > hrs){
-        warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours.");
-        return null;
+
+      // approximate daily controlled fraction based on entered occupied hours/day per row:
+      // We apply control to each row separately so hours/day differences behave correctly.
+      let controlledAnnual = 0;
+
+      for(const r of rows){
+        if((l1Hrs + l2Hrs) > r.hours){
+          warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours for at least one row.");
+          return null;
+        }
+        const dailyControlledKwh = (r.qty * r.newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
+        controlledAnnual += dailyControlledKwh * r.days;
       }
 
-      const dailyControlledKwh = (qty * newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
-      controlledKwhAnnual = dailyControlledKwh * days;
+      controlledKwhAnnual = controlledAnnual;
     }
 
     const kwhSavedCtrl_raw = oldKwh - controlledKwhAnnual;
@@ -417,22 +585,22 @@
     const annualCtrl = controlsOn ? annualCtrl_raw : 0;
     const netCtrl = controlsOn ? netCtrl_raw : 0;
 
+    // output
     $("outProject").textContent = project;
 
-    $("kwhFix").textContent = num(kwhSavedFix) + " kWh / year";
-    $("sFix").textContent = money(annualFix) + " / year";
-    $("cFix").textContent = money(netFix);
+    $("kwhFix").textContent = Math.round(kwhSavedFix).toLocaleString() + " kWh / year";
+    $("sFix").textContent = fmtMoney2(annualFix) + " / year";
+    $("cFix").textContent = fmtMoney2(netFix);
     $("pFix").textContent = payback(netFix, annualFix);
 
-    $("kwhCtrl").textContent = (controlsOn ? num(kwhSavedCtrl) : "0") + " kWh / year";
-    $("sCtrl").textContent = (controlsOn ? money(annualCtrl) : "$0") + " / year";
-    $("cCtrl").textContent = controlsOn ? money(netCtrl) : "$0";
+    $("kwhCtrl").textContent = (controlsOn ? Math.round(kwhSavedCtrl).toLocaleString() : "0") + " kWh / year";
+    $("sCtrl").textContent = (controlsOn ? fmtMoney2(annualCtrl) : "$0.00") + " / year";
+    $("cCtrl").textContent = controlsOn ? fmtMoney2(netCtrl) : "$0.00";
     $("pCtrl").textContent = controlsOn ? payback(netCtrl, annualCtrl) : "—";
 
     return {
-      project, toEmail,
-      qty, oldW, newW,
-      hrs, days, rate,
+      project, toEmail, rate,
+      rows,
       fixtureCost, laborCost, controlsCost,
       fixtureRebate, controlsRebate,
       controlsOn,
@@ -447,7 +615,6 @@
   function emailDraft(){
     const r = calc();
     if(!r) return;
-
     const to = (r.toEmail || "").trim();
     if(!to){ warn("Enter the customer email (To:)."); return; }
 
@@ -457,32 +624,21 @@
     const finalSavings = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
     const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
 
+    // Summarize rows
+    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr`).join("\n");
+
     let bodyText =
       "Project Name: " + r.project + "\n\n" +
-      "Existing Fixtures: " + r.qty + " fixtures @ " + r.oldW + "W each\n" +
-      "Recommended Fixtures: " + r.qty + " fixtures @ " + r.newW + "W each\n\n" +
+      "Fixture Lines:\n" + lines + "\n\n" +
       "Annual kWh Saved: " + Math.round(finalKwh).toLocaleString() + " kWh / year\n" +
-      "Cost Savings (Annual): " + money(finalSavings) + " / year\n" +
-      "ROI (Simple Payback): " + finalROI + "\n\n";
-
-    if(r.controlsOn){
-      bodyText +=
-        "Controls Breakdown:\n" +
-        "  Level 1: " + r.lvl1Pct + "% for " + r.lvl1Min + " min\n" +
-        "  Level 2: " + r.lvl2Pct + "% for " + r.lvl2Min + " min\n" +
-        "  Then OFF\n\n";
-    } else {
-      bodyText += "Controls: None\n\n";
-    }
-
-    bodyText +=
+      "Cost Savings (Annual): " + fmtMoney2(finalSavings) + " / year\n" +
+      "ROI (Simple Payback): " + finalROI + "\n\n" +
       "Prepared by AES (Jeff Mitchell)\n" +
       "jmitchell@allelectricsales.com\n" +
       "847 830 8447\n";
 
     const body = encodeURIComponent(bodyText);
     const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
-
     window.location.href =
       "mailto:" + encodeURIComponent(to) +
       "?bcc=" + bcc +
@@ -520,18 +676,14 @@
     const pageW = doc.internal.pageSize.getWidth();
     doc.setFillColor(255,255,255);
     doc.rect(0, 0, pageW, 24, "F");
-
     doc.addImage(logoDataUrl, "PNG", 12, 7, 26, 10);
-
     doc.setTextColor(0,0,0);
     doc.setFont("times", "bold");
     doc.setFontSize(14);
     doc.text("AES Lighting ROI Report", pageW / 2, 15, { align: "center" });
-
     doc.setFont("times", "normal");
     doc.setFontSize(10);
     doc.text(dateStr, pageW - 12, 16, { align: "right" });
-
     doc.setDrawColor(220);
     doc.line(12, 24, pageW - 12, 24);
   }
@@ -539,14 +691,11 @@
   function drawFooter(doc, pageNum, pageCount){
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-
     doc.setDrawColor(220);
     doc.line(12, pageH - 14, pageW - 12, pageH - 14);
-
     doc.setFont("times", "normal");
     doc.setFontSize(9);
     doc.setTextColor(70,70,70);
-
     doc.text(FOOTER_TEXT, 12, pageH - 8);
     doc.text(`Page ${pageNum} of ${pageCount}`, pageW - 12, pageH - 8, { align: "right" });
   }
@@ -562,12 +711,10 @@
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "letter" });
-
     doc.setFont("times", "normal");
     doc.setFontSize(11);
 
     const dateStr = fmtDate(new Date());
-
     const annualSavingsFinal = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
     const kwhSavedFinal = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
 
@@ -576,12 +723,12 @@
 
     const roiNoRebate = payback(initialNoRebate, annualSavingsFinal);
     const roiWithRebate = payback(initialWithRebate, annualSavingsFinal);
+
     const monthlyDecrease = annualSavingsFinal / 12;
 
     const existingKwh = r.oldKwh;
     const recommendedKwh = r.ledKwh;
 
-    // Plugin: red dashed $0 horizontal line on ROI chart
     const zeroLinePlugin = {
       id:"zeroLine",
       afterDraw(chart){
@@ -612,14 +759,13 @@
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
       const logoW = 70, logoH = 26;
-
       doc.addImage(logoDataUrl, "PNG", (pageW-logoW)/2, (pageH/2)-40, logoW, logoH);
       doc.setFont("times","bold"); doc.setFontSize(18);
       doc.text(r.project, pageW/2, (pageH/2), { align:"center" });
       doc.setFont("times","normal"); doc.setFontSize(12);
       doc.text(dateStr, pageW/2, (pageH/2)+10, { align:"center" });
 
-      // PAGE 2 — DATA ONLY (ORDER FIXED)
+      // PAGE 2 — DATA
       doc.addPage();
       let y = 36;
 
@@ -640,32 +786,30 @@
         y += 6.5;
       }
 
-      // 1) Fixtures
-      section("Fixtures");
-      row("Existing Fixtures:", `${r.qty} fixtures @ ${r.oldW}W`);
-      row("Recommended Fixtures:", `${r.qty} fixtures @ ${r.newW}W`);
+      section("Fixture Lines");
+      r.rows.forEach(line=>{
+        const s = `${line.name}: ${line.qty} @ ${line.oldW}W → ${line.newW}W, ${line.hours} hrs/day, ${line.days} days/yr`;
+        doc.text(doc.splitTextToSize(s, 190), 14, y);
+        y += 7.5;
+      });
 
-      // 2) Project Costs
       section("Project Costs");
-      row("Fixture Cost:", `$${Math.round(r.fixtureCost).toLocaleString()}`);
-      row("Labor Cost:", `$${Math.round(r.laborCost).toLocaleString()}`);
-      row("Controls Cost:", r.controlsOn ? `$${Math.round(r.controlsCost).toLocaleString()}` : "$0");
+      row("Fixture Cost:", fmtMoney2(r.fixtureCost));
+      row("Labor Cost:", fmtMoney2(r.laborCost));
+      row("Controls Cost:", r.controlsOn ? fmtMoney2(r.controlsCost) : "$0.00");
 
-      // 3) Rebates
       section("Rebates");
-      row("Fixture Rebate:", `$${Math.round(r.fixtureRebate).toLocaleString()}`);
-      row("Controls Rebate:", r.controlsOn ? `$${Math.round(r.controlsRebate).toLocaleString()}` : "$0");
+      row("Fixture Rebate:", fmtMoney2(r.fixtureRebate));
+      row("Controls Rebate:", r.controlsOn ? fmtMoney2(r.controlsRebate) : "$0.00");
 
-      // 4) Project Cost Summary
       section("Project Cost Summary");
-      row("Total (No Rebates):", `$${Math.round(initialNoRebate).toLocaleString()}`);
-      row("Total (With Rebates):", `$${Math.round(initialWithRebate).toLocaleString()}`);
+      row("Total (No Rebates):", fmtMoney2(initialNoRebate));
+      row("Total (With Rebates):", fmtMoney2(initialWithRebate));
 
-      // 5) Results
       section("Results");
       row("Annual kWh Saved:", `${Math.round(kwhSavedFinal).toLocaleString()} kWh`);
-      row("Annual Savings:", `$${Math.round(annualSavingsFinal).toLocaleString()} / year`);
-      row("Monthly Decrease:", `$${Math.round(monthlyDecrease).toLocaleString()} / month`);
+      row("Annual Savings:", `${fmtMoney2(annualSavingsFinal)} / year`);
+      row("Monthly Decrease:", `${fmtMoney2(monthlyDecrease)} / month`);
       row("ROI (No Rebates):", roiNoRebate);
       row("ROI (With Rebates):", roiWithRebate);
 
@@ -676,13 +820,11 @@
         row("After Level 2:", "OFF");
       }
 
-      // PAGE 3 — CHARTS ONLY
+      // PAGE 3 — CHARTS
       doc.addPage();
       y = 36;
-
       section("Annual kWh Usage (Existing vs Recommended)");
 
-      // Bar chart
       const barCanvas = document.createElement("canvas");
       barCanvas.width = 1000;
       barCanvas.height = 520;
@@ -712,7 +854,7 @@
             x:{
               grid:{ color:THEME.grid },
               ticks:{ font:{ size:9 }, color:THEME.text },
-              title:{ display:true, text:"Fixture Type", font:{ size:10, weight:"normal" }, color:THEME.text }
+              title:{ display:true, text:"Scenario", font:{ size:10, weight:"normal" }, color:THEME.text }
             },
             y:{
               grid:{ color:THEME.grid },
@@ -729,7 +871,6 @@
 
       section("ROI Graph (0–5 Years)");
 
-      // ROI chart
       const roiCanvas = document.createElement("canvas");
       roiCanvas.width = 1000;
       roiCanvas.height = 560;
@@ -796,11 +937,28 @@
     };
   }
 
+  // ---------- init ----------
   document.addEventListener("DOMContentLoaded", function(){
+    // bind currency formatting (Enter or blur)
+    document.querySelectorAll(".money2").forEach(bindMoney2);
+    bindRate4($("rate"));
+
+    // initial rate already 0.1636; force format to 4 decimals
+    $("rate").value = fmtRate4($("rate").value);
+
+    // table controls
+    $("addFixtureRow").addEventListener("click", ()=> addFixtureRow());
+    $("clearFixtureRows").addEventListener("click", ()=> clearFixtureRows());
+
+    // start with 2 fixture rows for testing
+    addFixtureRow({ name:"Fixture Type A", qty:50, oldW:400, newW:150, hours:12, days:365 });
+    addFixtureRow({ name:"Fixture Type B", qty:20, oldW:200, newW:90, hours:10, days:260 });
+
     $("controlsEnabled").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);
     $("btnEmail").addEventListener("click", emailDraft);
     $("btnPdf").addEventListener("click", generatePdfReport);
+
     toggleControlsUI();
   });
 })();

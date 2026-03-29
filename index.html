@@ -13,25 +13,29 @@
     --brand:#0a5c7d;
     --bg:#f4f6f8;
     --card:#ffffff;
-    --border:#d9dee3;
-    --soft:#f8fafc;
+    --border:#e5e7eb;
+    --soft:#f9fafb;
   }
   body{
-    font-family: Arial, sans-serif;
-    background: var(--bg);
-    margin: 0;
-    padding: 24px;
+ font-family: Arial, sans-serif;
+ background: var(--bg);
+ margin: 0;
+ padding: 24px;
+ color:#111;
+ }
+
     color:#111;
   }
-  \\.container{
-  width: 100%;
-  max-width: 1400px;
-    margin: auto;
-    background: var(--card);
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 8px 26px rgba(0,0,0,.08);
-  }
+  .container{ 
+ width:100%;
+ max-width:1200px;
+ margin:auto;
+ background: var(--card);
+ padding:22px 24px;
+ border-radius:14px;
+ border:1px solid #e5e7eb;
+ box-shadow:0 10px 28px rgba(0,0,0,.08);
+ }
   /* Header row: logo left, title centered within same line */
   .header{
     display:flex;
@@ -96,12 +100,12 @@
     .grid{ grid-template-columns: 1fr; }
   }
   .panel{
-    border: 1px solid var(--border);
-    background: var(--soft);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 14px;
-  }
+ border: 1px solid var(--border);
+ background: var(--soft);
+ border-radius: 12px;
+ padding: 14px;
+ margin-bottom: 16px;
+ }
   .fixtures-panel{
   margin-top: 24px;   /* space ABOVE Fixture Lines */
 }
@@ -156,12 +160,12 @@
     background:#fff;
   }
   th, td{
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
     padding: 10px;
     text-align:left;
     vertical-align: top;
   }
-  th{ background:#f0f3f6; }
+  th{ background:#f3f4f6; }
   .highlight{ font-weight:bold; background:#f9fbfd; }
   .footer{
     margin-top: 14px;
@@ -651,8 +655,7 @@
     const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
 
     // Summarize rows
-    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr, Controls: ${x.controls==="Yes"?"Yes":"No"}`).join("
-");
+    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr, Controls: ${x.controls==="Yes"?"Yes":"No"}`).join("\n");
 
     let bodyText =
       "Project Name: " + r.project + "\n\n" +
@@ -978,8 +981,8 @@
     $("rate").value = fmtRate4($("rate").value);
 
     // table controls
-    $("addFixtureRow").addEventListener("click", ()=> addFixtureRow());
-    $("clearFixtureRows").addEventListener("click", ()=> clearFixtureRows());
+    $("addFixtureRow").addEventListener("click", (e)=>{ e.preventDefault(); addFixtureRow(); });
+    $("clearFixtureRows").addEventListener("click", (e)=>{ e.preventDefault(); clearFixtureRows(); });
 
     // start with 2 fixture rows for testing
     addFixtureRow({ name:"Fixture Type A", qty:50, oldW:400, newW:165, hours:12, days:365, controls:"Yes" });

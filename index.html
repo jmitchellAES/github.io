@@ -241,7 +241,8 @@
 
   <div class="row no-print">
     <button class="primary" id="btnCalc" type="button">Calculate</button>
-    <button class="secondary" id="btnEmail" type="button">Email Customer (Print → Email)</button>
+    <!-- ✅ changed label -->
+    <button class="secondary" id="btnEmail" type="button">Email</button>
     <button class="secondary" id="btnPrint" type="button">Print / Save as PDF</button>
   </div>
 
@@ -310,6 +311,7 @@
     $("controlsFields").style.display = $("controlsEnabled").checked ? "block" : "none";
   }
 
+  // Returns details needed for email body too
   function calc(){
     clearWarn();
 
@@ -381,7 +383,15 @@
     $("pCtrl").textContent = payback(netCtrl, annualCtrl);
     $("incCtrl").textContent = money(inc) + " / year";
 
-    return { project, toEmail };
+    // Final savings = controls scenario if enabled, else fixtures-only
+    const finalAnnualSavings = $("controlsEnabled").checked ? annualCtrl : annualFix;
+
+    return {
+      project, toEmail,
+      qty, oldW, newW,
+      annualFix, annualCtrl,
+      finalAnnualSavings
+    };
   }
 
   // Print first (Save as PDF), then open email draft.
@@ -396,12 +406,20 @@
       return;
     }
 
-    // After print dialog closes, open mail draft
     window.onafterprint = function(){
       const subject = encodeURIComponent("AES Lighting ROI Report");
-      const body = encodeURIComponent(
-        "Please see attached ROI report preformed by AES. Contact Jeff Mitchell with any questions."
-      );
+
+      // ✅ New email body per your request:
+      // Project name, existing vs recommended fixtures, and final cost savings.
+      const bodyText =
+        "Please see attached ROI report preformed by AES. Contact Jeff Mitchell with any questions.\n\n" +
+        "Project Name: " + r.project + "\n\n" +
+        "Existing Fixtures: " + r.qty + " fixtures @ " + r.oldW + "W each\n" +
+        "Recommended Fixtures: " + r.qty + " fixtures @ " + r.newW + "W each\n\n" +
+        "Final Cost Savings (Annual): " + money(r.finalAnnualSavings) + " / year\n";
+
+      const body = encodeURIComponent(bodyText);
+
       const bcc = encodeURIComponent("jmitchell@allelectricsales.com");
 
       window.location.href =
@@ -410,7 +428,6 @@
         "&subject=" + subject +
         "&body=" + body;
 
-      // cleanup
       window.onafterprint = null;
     };
 
@@ -429,3 +446,4 @@
 </script>
 </body>
 </html>
+

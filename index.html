@@ -999,8 +999,8 @@
 
     $("controlsEnabled").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);
-    $("btnEmail").addEventListener("click", emailDraft);
-    $("btnPdf").addEventListener("click", generatePdfReport);
+    $("btnEmail").addEventListener("click", () => { const r = calc(); if(r) emailDraft(); });
+    $("btnPdf").addEventListener("click", () => { const r = calc(); if(r) generatePdfReport(); });
 
     toggleControlsUI();
   });

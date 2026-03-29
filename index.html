@@ -23,8 +23,9 @@
     padding: 24px;
     color:#111;
   }
-  .container{
-    max-width: 1040px;
+  \\.container{
+  width: 100%;
+  max-width: 1400px;
     margin: auto;
     background: var(--card);
     padding: 24px;
@@ -245,7 +246,8 @@
           <th style="width:16%;">Proposed Watt</th>
           <th style="width:16%;">Hours/Day</th>
           <th style="width:12%;">Days/Year</th>
-          <th style="width:12%;">Remove</th>
+      <th style="width:10%;">Controls</th>
+      <th style="width:12%;">Remove</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -457,6 +459,12 @@
       <td><input class="tInputSmall" type="number" min="0" step="1" value="${prefill?.newW??0}"></td>
       <td><input class="tInputSmall" type="number" min="0" step="0.25" value="${prefill?.hours??12}"></td>
       <td><input class="tInputSmall" type="number" min="0" step="1" value="${prefill?.days??365}"></td>
+      <td>
+        <select class="tInputSmall">
+          <option value="No" ${prefill?.controls==="Yes"?"":"selected"}>No</option>
+          <option value="Yes" ${prefill?.controls==="Yes"?"selected":""}>Yes</option>
+        </select>
+      </td>
       <td><button class="danger" type="button">Remove</button></td>
     `;
     tr.querySelector("button").onclick = ()=>{ tr.remove(); updateFixtureTotals(); };
@@ -482,7 +490,8 @@
       const newW = parseLoose(tds[3].querySelector("input").value);
       const hours = parseLoose(tds[4].querySelector("input").value);
       const days = parseLoose(tds[5].querySelector("input").value);
-      return { name, qty, oldW, newW, hours, days };
+      const controls = tds[6].querySelector("select").value;
+      return { name, qty, oldW, newW, hours, days, controls };
     }).filter(r=> r.qty>0);
   }
 
@@ -491,17 +500,19 @@
     let qtyTotal = 0;
     let oldKwh = 0;
     let newKwh = 0;
+    let ctrlQty = 0;
 
     rows.forEach(r=>{
       qtyTotal += r.qty;
       oldKwh += (r.qty * r.oldW * r.hours * r.days) / 1000;
       newKwh += (r.qty * r.newW * r.hours * r.days) / 1000;
+      if(r.controls==="Yes") ctrlQty += r.qty;
     });
 
     $("fixtureTotals").textContent =
       rows.length===0
       ? "Totals: —"
-      : `Totals: ${Math.round(qtyTotal).toLocaleString()} fixtures • Existing ${Math.round(oldKwh).toLocaleString()} kWh/yr • New ${Math.round(newKwh).toLocaleString()} kWh/yr`;
+      : `Totals: ${Math.round(qtyTotal).toLocaleString()} fixtures • Controls: ${Math.round(ctrlQty).toLocaleString()} • Existing ${Math.round(oldKwh).toLocaleString()} kWh/yr • New ${Math.round(newKwh).toLocaleString()} kWh/yr`;
   }
 
   // ---------- calc ----------
@@ -549,15 +560,16 @@
 
     const controlsOn = $("controlsEnabled").checked;
 
-    // Controls model applied to the TOTAL LED kWh
-    let controlledKwhAnnual = ledKwh;
+    // Controls are applied per fixture line ONLY when:
+    //  - Global controls toggle is enabled, AND
+    //  - That row's Controls dropdown is set to Yes
+    let controlledKwhAnnual = 0;
 
     if(controlsOn){
       const l1Pct = Number($("lvl1Pct").value) / 100;
       const l2Pct = Number($("lvl2Pct").value) / 100;
       const l1Min = Number($("lvl1Min").value);
       const l2Min = Number($("lvl2Min").value);
-
       const l1Hrs = l1Min / 60;
       const l2Hrs = l2Min / 60;
 
@@ -566,20 +578,26 @@
         return null;
       }
 
-      // approximate daily controlled fraction based on entered occupied hours/day per row:
-      // We apply control to each row separately so hours/day differences behave correctly.
-      let controlledAnnual = 0;
-
       for(const r of rows){
+        // If this fixture line does NOT have controls, use full LED consumption for that line
+        if(r.controls !== "Yes"){
+          controlledKwhAnnual += (r.qty * r.newW * r.hours * r.days) / 1000;
+          continue;
+        }
+
+        // Controlled lines use the 2-level dim model
         if((l1Hrs + l2Hrs) > r.hours){
-          warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours for at least one row.");
+          warn("Controls timing (Level 1 + Level 2) cannot exceed occupied hours for at least one controlled row.");
           return null;
         }
+
         const dailyControlledKwh = (r.qty * r.newW * ((l1Hrs*l1Pct) + (l2Hrs*l2Pct))) / 1000;
-        controlledAnnual += dailyControlledKwh * r.days;
+        controlledKwhAnnual += dailyControlledKwh * r.days;
       }
 
-      controlledKwhAnnual = controlledAnnual;
+    } else {
+      // If controls toggle is off, controlled scenario = fixtures-only LED consumption
+      controlledKwhAnnual = ledKwh;
     }
 
     const kwhSavedCtrl_raw = oldKwh - controlledKwhAnnual;
@@ -633,7 +651,8 @@
     const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
 
     // Summarize rows
-    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr`).join("\n");
+    let lines = r.rows.map(x=>`- ${x.name}: ${x.qty} @ ${x.oldW}W → ${x.newW}W, ${x.hours} hrs/day, ${x.days} days/yr, Controls: ${x.controls==="Yes"?"Yes":"No"}`).join("
+");
 
     let bodyText =
       "Project Name: " + r.project + "\n\n" +
@@ -795,9 +814,13 @@
       }
 
       section("Fixture Lines");
+      // Ensure normal character spacing
+      if(doc.setCharSpace) doc.setCharSpace(0);
+
       r.rows.forEach(line=>{
-        const s = `${line.name}: ${line.qty} @ ${line.oldW}W → ${line.newW}W, ${line.hours} hrs/day, ${line.days} days/yr`;
-        doc.text(doc.splitTextToSize(s, 190), 14, y);
+        const ctrlTxt = line.controls === "Yes" ? "Yes" : "No";
+        const s = `${line.name}: ${line.qty} @ ${line.oldW}W → ${line.newW}W, ${line.hours} hrs/day, ${line.days} days/yr, Controls: ${ctrlTxt}`;
+        doc.text(s, 14, y, { maxWidth: 190 });
         y += 7.5;
       });
 
@@ -926,7 +949,7 @@
 
       // Header/footer on every page
       const pageCount = doc.internal.getNumberOfPages();
-      for(let i=1; i<=pageCount; i++){
+      for(let i=2; i<=pageCount; i++){
         doc.setPage(i);
         drawHeader(doc, logoDataUrl, dateStr);
         drawFooter(doc, i, pageCount);
@@ -959,8 +982,8 @@
     $("clearFixtureRows").addEventListener("click", ()=> clearFixtureRows());
 
     // start with 2 fixture rows for testing
-    addFixtureRow({ name:"Fixture Type A", qty:50, oldW:400, newW:150, hours:12, days:365 });
-    addFixtureRow({ name:"Fixture Type B", qty:20, oldW:200, newW:90, hours:10, days:260 });
+    addFixtureRow({ name:"Fixture Type A", qty:50, oldW:400, newW:165, hours:12, days:365, controls:"Yes" });
+    addFixtureRow({ name:"Fixture Type B", qty:20, oldW:200, newW:36, hours:10, days:365, controls:"No" });
 
     $("controlsEnabled").addEventListener("change", toggleControlsUI);
     $("btnCalc").addEventListener("click", calc);

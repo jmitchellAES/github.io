@@ -829,16 +829,21 @@
         y += 6.5;
       }
 
-      section("Fixture Lines");
-      // Ensure normal character spacing
-      if(doc.setCharSpace) doc.setCharSpace(0);
+    section("Fixture Lines");
 
-      r.rows.forEach(line=>{
-        const ctrlTxt = line.controls === "Yes" ? "Yes" : "No";
-        const s = `${line.name}: ${line.qty} @ ${line.oldW}W → ${line.newW}W, ${line.hours} hrs/day, ${line.days} days/yr, Controls: ${ctrlTxt}`;
-        doc.text(s, 14, y, { maxWidth: 190 });
-        y += 7.5;
-      });
+    // IMPORTANT: ensure normal spacing
+    if (doc.setCharSpace) doc.setCharSpace(0);
+
+    r.rows.forEach(line => {
+      const ctrl = line.controls === "Yes" ? "Yes" : "No";
+      const text =
+    `${line.name}: ${line.qty} @ ${line.oldW}W → ${line.newW}W, ` +
+    `${line.hours} hrs/day, ${line.days} days/yr, Controls: ${ctrl}`;
+
+      const wrapped = doc.splitTextToSize(text, 180);
+      doc.text(wrapped, 14, y);
+      y += wrapped.length * 6;
+    });
 
       section("Project Costs");
       row("Fixture Cost:", fmtMoney2(r.fixtureCost));

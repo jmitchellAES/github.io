@@ -191,6 +191,7 @@
     </div>
   </div>
 
+  <!-- Costs + Rebates -->
   <div class="panel">
     <div class="grid">
       <div>
@@ -221,6 +222,7 @@
     </div>
   </div>
 
+  <!-- Controls checkbox -->
   <div class="panel">
     <div class="toggleRow">
       <input id="controlsEnabled" type="checkbox">
@@ -344,6 +346,8 @@
       return null;
     }
 
+    const controlsOn = $("controlsEnabled").checked;
+
     // Annual baseline energies (kWh)
     const oldKwh = (qty * oldW * hrs * days) / 1000;
     const ledKwh = (qty * newW * hrs * days) / 1000;
@@ -352,14 +356,12 @@
     const kwhSavedFix = oldKwh - ledKwh;
     const annualFix = kwhSavedFix * rate;
 
-    // gross cost (no rebates)
     const grossFix = fixtureCost + laborCost;
-    // net cost (rebates)
     const netFix = Math.max(0, grossFix - fixtureRebate);
 
-    // Controls energy (if enabled)
+    // Controls scenario
     let controlledKwhAnnual = ledKwh;
-    if($("controlsEnabled").checked){
+    if(controlsOn){
       const l1Pct = Number($("lvl1Pct").value) / 100;
       const l2Pct = Number($("lvl2Pct").value) / 100;
       const l1Hrs = Number($("lvl1Min").value) / 60;
@@ -378,43 +380,42 @@
       controlledKwhAnnual = dailyControlledKwh * days;
     }
 
-    const kwhSavedCtrl = oldKwh - controlledKwhAnnual;
-    let annualCtrl = kwhSavedCtrl * rate;
-    if(annualCtrl < annualFix) annualCtrl = annualFix;
+    const kwhSavedCtrl_raw = oldKwh - controlledKwhAnnual;
+    let annualCtrl_raw = kwhSavedCtrl_raw * rate;
+    if(annualCtrl_raw < annualFix) annualCtrl_raw = annualFix;
 
-    const grossCtrl = fixtureCost + laborCost + ($("controlsEnabled").checked ? controlsCost : 0);
-    const netCtrl = Math.max(0, grossCtrl - fixtureRebate - ($("controlsEnabled").checked ? controlsRebate : 0));
+    const grossCtrl = fixtureCost + laborCost + (controlsOn ? controlsCost : 0);
+    const netCtrl_raw = Math.max(0, grossCtrl - fixtureRebate - (controlsOn ? controlsRebate : 0));
+
+    // ✅ Change #1: if controls NOT checked, zero out the controls column
+    const kwhSavedCtrl = controlsOn ? kwhSavedCtrl_raw : 0;
+    const annualCtrl = controlsOn ? annualCtrl_raw : 0;
+    const netCtrl = controlsOn ? netCtrl_raw : 0;
 
     // Render
     $("outProject").textContent = project;
 
     $("kwhFix").textContent = num(kwhSavedFix) + " kWh / year";
-    $("kwhCtrl").textContent = num(kwhSavedCtrl) + " kWh / year";
-
     $("sFix").textContent = money(annualFix) + " / year";
-    $("sCtrl").textContent = money(annualCtrl) + " / year";
-
     $("cFix").textContent = money(netFix);
-    $("cCtrl").textContent = money(netCtrl);
-
     $("pFix").textContent = payback(netFix, annualFix);
-    $("pCtrl").textContent = payback(netCtrl, annualCtrl);
 
-    // return everything PDF needs
+    $("kwhCtrl").textContent = (controlsOn ? num(kwhSavedCtrl) : "0") + " kWh / year";
+    $("sCtrl").textContent = (controlsOn ? money(annualCtrl) : "$0") + " / year";
+    $("cCtrl").textContent = controlsOn ? money(netCtrl) : "$0";
+    $("pCtrl").textContent = controlsOn ? payback(netCtrl, annualCtrl) : "—";
+
     return {
       project, toEmail,
       qty, oldW, newW,
       hrs, days, rate,
       fixtureCost, laborCost, controlsCost,
       fixtureRebate, controlsRebate,
-      controlsOn: $("controlsEnabled").checked,
+      controlsOn,
       lvl1Pct: $("lvl1Pct").value, lvl1Min: $("lvl1Min").value,
       lvl2Pct: $("lvl2Pct").value, lvl2Min: $("lvl2Min").value,
-      oldKwh, ledKwh, controlledKwhAnnual,
-      kwhSavedFix, kwhSavedCtrl,
-      annualFix, annualCtrl,
-      grossFix, netFix,
-      grossCtrl, netCtrl
+      kwhSavedFix, annualFix, grossFix, netFix,
+      kwhSavedCtrl_raw, annualCtrl_raw, grossCtrl, netCtrl_raw
     };
   }
 
@@ -426,10 +427,9 @@
     if(!to){ warn("Enter the customer email (To:)."); return; }
 
     const subject = encodeURIComponent("AES Lighting ROI Report");
-
-    const finalKwh = r.controlsOn ? r.kwhSavedCtrl : r.kwhSavedFix;
-    const finalSavings = r.controlsOn ? r.annualCtrl : r.annualFix;
-    const finalROI = r.controlsOn ? payback(r.netCtrl, r.annualCtrl) : payback(r.netFix, r.annualFix);
+    const finalKwh = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
+    const finalSavings = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
+    const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
 
     let bodyText =
       "Project Name: " + r.project + "\n\n" +
@@ -464,8 +464,14 @@
       "&body=" + body;
   }
 
+  function fmtDate(d){
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  }
+
   async function imgToDataUrl(img){
-    // convert image to dataURL (safe for jsPDF)
     const c = document.createElement("canvas");
     c.width = img.naturalWidth || img.width;
     c.height = img.naturalHeight || img.height;
@@ -475,7 +481,6 @@
   }
 
   function buildRoiSeries(initialCost, annualSavings){
-    // years 0..5 in 0.25 increments
     const xs = [];
     const ys = [];
     for(let t=0; t<=5.0001; t+=0.25){
@@ -489,19 +494,26 @@
     const r = calc();
     if(!r) return;
 
+    if(!window.jspdf || !window.Chart){
+      warn("PDF libraries not loaded. Refresh and try again.");
+      return;
+    }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "letter" });
 
-    const annualSavingsFinal = r.controlsOn ? r.annualCtrl : r.annualFix;
-    const kwhSavedFinal = r.controlsOn ? r.kwhSavedCtrl : r.kwhSavedFix;
+    const d = new Date();
+    const reportDate = fmtDate(d);
 
-    // cost lines: WITHOUT rebates vs WITH rebates (net)
+    // Use fixtures-only if controls off
+    const annualSavingsFinal = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
+    const kwhSavedFinal = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
+
     const initialNoRebate = r.controlsOn ? r.grossCtrl : r.grossFix;
-    const initialWithRebate = r.controlsOn ? r.netCtrl : r.netFix;
+    const initialWithRebate = r.controlsOn ? r.netCtrl_raw : r.netFix;
 
     const roiNoRebate = payback(initialNoRebate, annualSavingsFinal);
     const roiWithRebate = payback(initialWithRebate, annualSavingsFinal);
-
     const monthlyDecrease = annualSavingsFinal / 12;
 
     const logoImg = new Image();
@@ -510,71 +522,94 @@
     logoImg.onload = async function(){
       const logoDataUrl = await imgToDataUrl(logoImg);
 
-      let y = 12;
+      // --- Header bar ---
+      doc.setFillColor(10, 92, 125); // brand
+      doc.rect(0, 0, 216, 18, "F");
 
-      // Logo
-      doc.addImage(logoDataUrl, "PNG", 12, y, 40, 14); // [1](https://artskydj.github.io/jsPDF/docs/module-addImage.html)
-      y += 22;
+      doc.addImage(logoDataUrl, "PNG", 12, 3, 28, 10);
 
-      // Title
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(13);
+      doc.text("AES Lighting ROI Report", 50, 12);
+
+      // Date "table" right side
+      doc.setFontSize(10);
+      doc.text("Date:", 170, 8);
+      doc.text(reportDate, 170, 14);
+
+      doc.setTextColor(0,0,0);
+
+      let y = 28;
+
+      // Job title
       doc.setFontSize(16);
       doc.text(r.project, 12, y);
       y += 8;
 
-      doc.setFontSize(11);
+      // Section helper
+      function section(title){
+        doc.setFillColor(240, 243, 246);
+        doc.rect(12, y, 192, 7, "F");
+        doc.setFontSize(12);
+        doc.setTextColor(0,0,0);
+        doc.text(title, 14, y+5);
+        y += 10;
+      }
+      function row(label, value){
+        doc.setFontSize(11);
+        doc.text(label, 14, y);
+        doc.text(value, 120, y);
+        y += 6;
+      }
 
       // Existing / Recommended
-      doc.text(`Existing Fixtures: ${r.qty} @ ${r.oldW}W`, 12, y); y += 6;
-      doc.text(`Recommended Fixtures: ${r.qty} @ ${r.newW}W`, 12, y); y += 8;
+      section("Fixtures");
+      row("Existing Fixtures:", `${r.qty} fixtures @ ${r.oldW}W`);
+      row("Recommended Fixtures:", `${r.qty} fixtures @ ${r.newW}W`);
 
       // Costs
-      doc.setFontSize(12);
-      doc.text("Project Costs", 12, y); y += 6;
-      doc.setFontSize(11);
-      doc.text(`• Fixtures: $${Math.round(r.fixtureCost).toLocaleString()}`, 15, y); y += 5;
-      doc.text(`• Labor: $${Math.round(r.laborCost).toLocaleString()}`, 15, y); y += 5;
+      section("Project Costs");
+      row("Fixture Cost:", `$${Math.round(r.fixtureCost).toLocaleString()}`);
+      row("Labor Cost:", `$${Math.round(r.laborCost).toLocaleString()}`);
       if(r.controlsOn){
-        doc.text(`• Controls: $${Math.round(r.controlsCost).toLocaleString()}`, 15, y); y += 5;
+        row("Controls Cost:", `$${Math.round(r.controlsCost).toLocaleString()}`);
+      } else {
+        row("Controls Cost:", "$0");
       }
-      y += 4;
 
       // Summary
-      doc.setFontSize(12);
-      doc.text("Cost Summary", 12, y); y += 6;
-      doc.setFontSize(11);
-      doc.text(`Total (No Rebates): $${Math.round(initialNoRebate).toLocaleString()}`, 15, y); y += 5;
+      section("Project Cost Summary");
+      row("Total (No Rebates):", `$${Math.round(initialNoRebate).toLocaleString()}`);
+      row("Total (With Rebates):", `$${Math.round(initialWithRebate).toLocaleString()}`);
 
       // Rebates
-      doc.setFontSize(12);
-      doc.text("Rebates", 12, y); y += 6;
-      doc.setFontSize(11);
-      doc.text(`• Fixture Rebate: $${Math.round(r.fixtureRebate).toLocaleString()}`, 15, y); y += 5;
-      if(r.controlsOn){
-        doc.text(`• Controls Rebate: $${Math.round(r.controlsRebate).toLocaleString()}`, 15, y); y += 5;
-      }
-      doc.text(`Total (With Rebates): $${Math.round(initialWithRebate).toLocaleString()}`, 15, y); y += 8;
+      section("Rebates");
+      row("Fixture Rebate:", `$${Math.round(r.fixtureRebate).toLocaleString()}`);
+      row("Controls Rebate:", r.controlsOn ? `$${Math.round(r.controlsRebate).toLocaleString()}` : "$0");
 
       // Results
-      doc.setFontSize(12);
-      doc.text("Results", 12, y); y += 6;
-      doc.setFontSize(11);
-      doc.text(`Annual kWh Saved: ${Math.round(kwhSavedFinal).toLocaleString()} kWh`, 15, y); y += 5;
-      doc.text(`Annual Savings: $${Math.round(annualSavingsFinal).toLocaleString()} / year`, 15, y); y += 5;
-      doc.text(`Monthly Decrease in Cost: $${Math.round(monthlyDecrease).toLocaleString()} / month`, 15, y); y += 5;
-      doc.text(`ROI (No Rebates): ${roiNoRebate}`, 15, y); y += 5;
-      doc.text(`ROI (With Rebates): ${roiWithRebate}`, 15, y); y += 8;
+      section("Results");
+      row("Annual kWh Saved:", `${Math.round(kwhSavedFinal).toLocaleString()} kWh`);
+      row("Annual Savings:", `$${Math.round(annualSavingsFinal).toLocaleString()} / year`);
+      row("Monthly Decrease:", `$${Math.round(monthlyDecrease).toLocaleString()} / month`);
+      row("ROI (No Rebates):", roiNoRebate);
+      row("ROI (With Rebates):", roiWithRebate);
 
+      // Controls breakdown
       if(r.controlsOn){
-        doc.setFontSize(12);
-        doc.text("Controls Breakdown", 12, y); y += 6;
-        doc.setFontSize(11);
-        doc.text(`Level 1: ${r.lvl1Pct}% for ${r.lvl1Min} min`, 15, y); y += 5;
-        doc.text(`Level 2: ${r.lvl2Pct}% for ${r.lvl2Min} min`, 15, y); y += 8;
+        section("Controls Breakdown");
+        row("Level 1:", `${r.lvl1Pct}% for ${r.lvl1Min} min`);
+        row("Level 2:", `${r.lvl2Pct}% for ${r.lvl2Min} min`);
+        row("After Level 2:", "OFF");
       }
 
-      // ROI Graph
-      doc.setFontSize(12);
-      doc.text("ROI Graph (0–5 Years)", 12, y); y += 4;
+      // If we're too low, add a new page for the graph
+      if(y > 190){
+        doc.addPage();
+        y = 20;
+      }
+
+      section("ROI Graph (0–5 Years)");
 
       const canvas = document.createElement("canvas");
       canvas.width = 900;
@@ -584,7 +619,6 @@
       const s1 = buildRoiSeries(initialNoRebate, annualSavingsFinal);
       const s2 = buildRoiSeries(initialWithRebate, annualSavingsFinal);
 
-      // Destroy prior chart if any (safety)
       if(window._roiChart){ window._roiChart.destroy(); }
 
       window._roiChart = new Chart(ctx, {
@@ -598,10 +632,8 @@
         },
         options: {
           responsive: false,
-          animation: false, // ensures immediate render [3](https://stackoverflow.com/questions/20206038/converting-chart-js-canvas-chart-to-image-using-todataurl-results-in-blank-im)
-          plugins: {
-            legend: { display: true }
-          },
+          animation: false,
+          plugins: { legend: { display: true } },
           scales: {
             x: { title: { display: true, text: "Years" }, min: 0, max: 5 },
             y: { title: { display: true, text: "Cumulative Cash Flow ($)" } }
@@ -609,13 +641,12 @@
         }
       });
 
-      // Wait one tick to be safe, then export image
       setTimeout(function(){
-        const chartImg = window._roiChart.toBase64Image(); // [2](https://www.chartjs.org/docs/latest/developers/api.html)
-        doc.addImage(chartImg, "PNG", 12, y + 2, 190, 85); // [1](https://artskydj.github.io/jsPDF/docs/module-addImage.html)
+        const chartImg = window._roiChart.toBase64Image();
+        doc.addImage(chartImg, "PNG", 12, y, 192, 88);
 
-        const safeName = r.project.replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"");
-        doc.save((safeName || "AES_ROI_Report") + "_ROI_Report.pdf");
+        const safeName = (r.project || "Project").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"");
+        doc.save((safeName || "Project") + " AES ROI.pdf");
       }, 30);
     };
 
@@ -635,3 +666,4 @@
 </script>
 </body>
 </html>
+``

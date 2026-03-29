@@ -136,7 +136,7 @@
   }
 </style>
 
-<!-- ✅ IMPORTANT: scripts must be OUTSIDE <style> -->
+<!-- libs (must be OUTSIDE style) -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -146,9 +146,7 @@
 
   <div class="header">
     <img class="logo" src="aes-logo.png" alt="AES logo">
-    <div>
-      <h1>Lighting ROI Calculator</h1>
-    </div>
+    <div><h1>Lighting ROI Calculator</h1></div>
   </div>
 
   <div class="grid">
@@ -191,7 +189,6 @@
     </div>
   </div>
 
-  <!-- Costs + Rebates -->
   <div class="panel">
     <div class="grid">
       <div>
@@ -222,7 +219,6 @@
     </div>
   </div>
 
-  <!-- Controls checkbox -->
   <div class="panel">
     <div class="toggleRow">
       <input id="controlsEnabled" type="checkbox">
@@ -348,18 +344,15 @@
 
     const controlsOn = $("controlsEnabled").checked;
 
-    // Annual baseline energies (kWh)
     const oldKwh = (qty * oldW * hrs * days) / 1000;
     const ledKwh = (qty * newW * hrs * days) / 1000;
 
-    // Fixtures-only
     const kwhSavedFix = oldKwh - ledKwh;
     const annualFix = kwhSavedFix * rate;
 
     const grossFix = fixtureCost + laborCost;
     const netFix = Math.max(0, grossFix - fixtureRebate);
 
-    // Controls scenario
     let controlledKwhAnnual = ledKwh;
     if(controlsOn){
       const l1Pct = Number($("lvl1Pct").value) / 100;
@@ -387,12 +380,11 @@
     const grossCtrl = fixtureCost + laborCost + (controlsOn ? controlsCost : 0);
     const netCtrl_raw = Math.max(0, grossCtrl - fixtureRebate - (controlsOn ? controlsRebate : 0));
 
-    // ✅ Change #1: if controls NOT checked, zero out the controls column
+    // Change #1: if controls not checked, zero out controls column
     const kwhSavedCtrl = controlsOn ? kwhSavedCtrl_raw : 0;
     const annualCtrl = controlsOn ? annualCtrl_raw : 0;
     const netCtrl = controlsOn ? netCtrl_raw : 0;
 
-    // Render
     $("outProject").textContent = project;
 
     $("kwhFix").textContent = num(kwhSavedFix) + " kWh / year";
@@ -414,6 +406,7 @@
       controlsOn,
       lvl1Pct: $("lvl1Pct").value, lvl1Min: $("lvl1Min").value,
       lvl2Pct: $("lvl2Pct").value, lvl2Min: $("lvl2Min").value,
+      oldKwh, ledKwh, controlledKwhAnnual,
       kwhSavedFix, annualFix, grossFix, netFix,
       kwhSavedCtrl_raw, annualCtrl_raw, grossCtrl, netCtrl_raw
     };
@@ -427,6 +420,7 @@
     if(!to){ warn("Enter the customer email (To:)."); return; }
 
     const subject = encodeURIComponent("AES Lighting ROI Report");
+
     const finalKwh = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
     const finalSavings = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
     const finalROI = r.controlsOn ? payback(r.netCtrl_raw, r.annualCtrl_raw) : payback(r.netFix, r.annualFix);
@@ -490,6 +484,26 @@
     return { xs, ys };
   }
 
+  function drawHeader(doc, logoDataUrl, dateStr){
+    // White header, repeated each page via setPage loop (post-render) [1](https://app.studyraid.com/en/read/14996/518180/adding-consistent-headers-across-all-pages)
+    const pageW = doc.internal.pageSize.getWidth();
+    doc.setFillColor(255,255,255);
+    doc.rect(0, 0, pageW, 18, "F");
+
+    doc.addImage(logoDataUrl, "PNG", 12, 4, 28, 10);
+
+    doc.setTextColor(0,0,0);
+    doc.setFontSize(13);
+    doc.text("AES Lighting ROI Report", 50, 12);
+
+    doc.setFontSize(10);
+    doc.text("Date:", pageW - 38, 8);
+    doc.text(dateStr, pageW - 38, 14);
+
+    doc.setDrawColor(220);
+    doc.line(12, 18, pageW - 12, 18);
+  }
+
   function generatePdfReport(){
     const r = calc();
     if(!r) return;
@@ -502,10 +516,8 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "letter" });
 
-    const d = new Date();
-    const reportDate = fmtDate(d);
+    const dateStr = fmtDate(new Date());
 
-    // Use fixtures-only if controls off
     const annualSavingsFinal = r.controlsOn ? r.annualCtrl_raw : r.annualFix;
     const kwhSavedFinal = r.controlsOn ? r.kwhSavedCtrl_raw : r.kwhSavedFix;
 
@@ -516,37 +528,39 @@
     const roiWithRebate = payback(initialWithRebate, annualSavingsFinal);
     const monthlyDecrease = annualSavingsFinal / 12;
 
+    // kWh usage chart requested: Existing vs Recommended (kWh/year)
+    const existingKwh = r.oldKwh;
+    const recommendedKwh = r.ledKwh;
+
     const logoImg = new Image();
     logoImg.src = "aes-logo.png";
 
     logoImg.onload = async function(){
       const logoDataUrl = await imgToDataUrl(logoImg);
 
-      // --- Header bar ---
-      doc.setFillColor(10, 92, 125); // brand
-      doc.rect(0, 0, 216, 18, "F");
+      // --- Cover page (centered) ---
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
 
-      doc.addImage(logoDataUrl, "PNG", 12, 3, 28, 10);
+      const logoW = 60;
+      const logoH = 22;
+      const centerX = (pageW - logoW) / 2;
 
-      doc.setTextColor(255,255,255);
-      doc.setFontSize(13);
-      doc.text("AES Lighting ROI Report", 50, 12);
+      doc.addImage(logoDataUrl, "PNG", centerX, (pageH/2) - 45, logoW, logoH);
 
-      // Date "table" right side
-      doc.setFontSize(10);
-      doc.text("Date:", 170, 8);
-      doc.text(reportDate, 170, 14);
-
+      doc.setFontSize(18);
       doc.setTextColor(0,0,0);
+      doc.text(r.project, pageW/2, (pageH/2) - 12, { align: "center" });
 
+      doc.setFontSize(12);
+      doc.text(dateStr, pageW/2, (pageH/2) + 2, { align: "center" });
+
+      // Add content page
+      doc.addPage();
+
+      // Start below header space
       let y = 28;
 
-      // Job title
-      doc.setFontSize(16);
-      doc.text(r.project, 12, y);
-      y += 8;
-
-      // Section helper
       function section(title){
         doc.setFillColor(240, 243, 246);
         doc.rect(12, y, 192, 7, "F");
@@ -562,32 +576,23 @@
         y += 6;
       }
 
-      // Existing / Recommended
       section("Fixtures");
       row("Existing Fixtures:", `${r.qty} fixtures @ ${r.oldW}W`);
       row("Recommended Fixtures:", `${r.qty} fixtures @ ${r.newW}W`);
 
-      // Costs
       section("Project Costs");
       row("Fixture Cost:", `$${Math.round(r.fixtureCost).toLocaleString()}`);
       row("Labor Cost:", `$${Math.round(r.laborCost).toLocaleString()}`);
-      if(r.controlsOn){
-        row("Controls Cost:", `$${Math.round(r.controlsCost).toLocaleString()}`);
-      } else {
-        row("Controls Cost:", "$0");
-      }
+      row("Controls Cost:", r.controlsOn ? `$${Math.round(r.controlsCost).toLocaleString()}` : "$0");
 
-      // Summary
       section("Project Cost Summary");
       row("Total (No Rebates):", `$${Math.round(initialNoRebate).toLocaleString()}`);
       row("Total (With Rebates):", `$${Math.round(initialWithRebate).toLocaleString()}`);
 
-      // Rebates
       section("Rebates");
       row("Fixture Rebate:", `$${Math.round(r.fixtureRebate).toLocaleString()}`);
       row("Controls Rebate:", r.controlsOn ? `$${Math.round(r.controlsRebate).toLocaleString()}` : "$0");
 
-      // Results
       section("Results");
       row("Annual kWh Saved:", `${Math.round(kwhSavedFinal).toLocaleString()} kWh`);
       row("Annual Savings:", `$${Math.round(annualSavingsFinal).toLocaleString()} / year`);
@@ -595,7 +600,6 @@
       row("ROI (No Rebates):", roiNoRebate);
       row("ROI (With Rebates):", roiWithRebate);
 
-      // Controls breakdown
       if(r.controlsOn){
         section("Controls Breakdown");
         row("Level 1:", `${r.lvl1Pct}% for ${r.lvl1Min} min`);
@@ -603,25 +607,61 @@
         row("After Level 2:", "OFF");
       }
 
-      // If we're too low, add a new page for the graph
-      if(y > 190){
-        doc.addPage();
-        y = 20;
+      // --- Bar chart: kWh usage existing vs recommended (before ROI graph) ---
+      if(y > 165){
+        doc.addPage(); y = 28;
       }
+      section("Annual kWh Usage (Existing vs Recommended)");
 
+      const barCanvas = document.createElement("canvas");
+      barCanvas.width = 900;
+      barCanvas.height = 420;
+      const barCtx = barCanvas.getContext("2d");
+
+      if(window._kwhChart){ window._kwhChart.destroy(); }
+      window._kwhChart = new Chart(barCtx, {
+        type: "bar",
+        data: {
+          labels: ["Existing", "Recommended"],
+          datasets: [{
+            label: "kWh per year",
+            data: [existingKwh, recommendedKwh],
+            backgroundColor: ["#0a5c7d", "#94a3b8"]
+          }]
+        },
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { title: { display: true, text: "Fixture Set" } },
+            y: { title: { display: true, text: "kWh per year" } }
+          }
+        }
+      });
+
+      // Export after a tick (Chart rendering can be async) [4](https://stackoverflow.com/questions/20206038/converting-chart-js-canvas-chart-to-image-using-todataurl-results-in-blank-im)[3](https://quickchart.io/documentation/chart-js/image-export/)
+      await new Promise(res => setTimeout(res, 30));
+      const barImg = window._kwhChart.toBase64Image(); // [2](https://www.chartjs.org/docs/latest/developers/api.html)
+      doc.addImage(barImg, "PNG", 12, y, 192, 70);
+      y += 80;
+
+      // --- ROI graph ---
+      if(y > 165){
+        doc.addPage(); y = 28;
+      }
       section("ROI Graph (0–5 Years)");
 
-      const canvas = document.createElement("canvas");
-      canvas.width = 900;
-      canvas.height = 420;
-      const ctx = canvas.getContext("2d");
+      const roiCanvas = document.createElement("canvas");
+      roiCanvas.width = 900;
+      roiCanvas.height = 420;
+      const roiCtx = roiCanvas.getContext("2d");
 
       const s1 = buildRoiSeries(initialNoRebate, annualSavingsFinal);
       const s2 = buildRoiSeries(initialWithRebate, annualSavingsFinal);
 
       if(window._roiChart){ window._roiChart.destroy(); }
-
-      window._roiChart = new Chart(ctx, {
+      window._roiChart = new Chart(roiCtx, {
         type: "line",
         data: {
           labels: s1.xs,
@@ -641,13 +681,19 @@
         }
       });
 
-      setTimeout(function(){
-        const chartImg = window._roiChart.toBase64Image();
-        doc.addImage(chartImg, "PNG", 12, y, 192, 88);
+      await new Promise(res => setTimeout(res, 30));
+      const roiImg = window._roiChart.toBase64Image(); // [2](https://www.chartjs.org/docs/latest/developers/api.html)
+      doc.addImage(roiImg, "PNG", 12, y, 192, 80);
 
-        const safeName = (r.project || "Project").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"");
-        doc.save((safeName || "Project") + " AES ROI.pdf");
-      }, 30);
+      // --- Header on every page (white) ---
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i=1; i<=pageCount; i++){
+        doc.setPage(i);
+        drawHeader(doc, logoDataUrl, dateStr);
+      } // [1](https://app.studyraid.com/en/read/14996/518180/adding-consistent-headers-across-all-pages)
+
+      const safeName = (r.project || "Project").replace(/[^a-z0-9]+/gi,"_").replace(/^_+|_+$/g,"");
+      doc.save((safeName || "Project") + " AES ROI.pdf");
     };
 
     logoImg.onerror = function(){
@@ -666,4 +712,3 @@
 </script>
 </body>
 </html>
-``
